@@ -3,122 +3,311 @@
 <head>
     <meta charset="UTF-8" />
     <title>設備登録</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+
+        .form-container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 800px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            width: 180px;
+            color: #555;
+        }
+
+        input[type="text"], 
+        input[type="number"], 
+        input[type="date"], 
+        select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        input[type="text"]:focus, 
+        input[type="number"]:focus, 
+        input[type="date"]:focus, 
+        select:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+        }
+
+        input[type="checkbox"] {
+            transform: scale(1.2);
+            margin-right: 8px;
+        }
+
+        .date-inputs {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .date-inputs input {
+            width: 80px;
+            text-align: center;
+        }
+
+        .date-inputs span {
+            font-weight: bold;
+            color: #666;
+        }
+
+        .button-container {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .btn-primary {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 15px;
+            transition: background-color 0.3s;
+        }
+
+        .btn-primary:hover {
+            background-color: #45a049;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            text-decoration: none;
+            display: inline-block;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+            text-decoration: none;
+            color: white;
+        }
+
+        .required {
+            color: red;
+            font-weight: bold;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+        }
+    </style>
 </head>
 <body>
-<h1>新規設備登録</h1>
+    <div class="form-container">
+        <h1>新規設備登録</h1>
 
-<form th:action="@{/equipment/create}" method="post" th:object="${equipmentForm}">
-    <table>
-        <tr>
-            <td>カテゴリコード：</td>
-            <td>
-                <select id="categorySelect" th:field="*{categoryCode}" required>
-                    <option value="" disabled th:selected="${equipmentForm.categoryCode == null}">選択してください</option>
-                    <option th:each="cat : ${categoryOptions}" th:value="${cat.code}"
-                            th:text="${cat.label}"></option>
-                </select>
-            </td>
-        </tr>
-        <tr>
-            <td>品目コード：</td>
-            <td>
-                <select id="itemSelect" th:field="*{itemCode}" required>
-                    <option value="" disabled th:selected="${equipmentForm.itemCode == null}">選択してください</option>
-                </select>
-            </td>
-        </tr>
-        <tr><td>名前：</td><td><input type="text" th:field="*{name}" required /></td></tr>
-        <tr><td>型番：</td><td><input type="text" th:field="*{modelNumber}" /></td></tr>
-        <tr><td>メーカー：</td><td><input type="text" th:field="*{manufacturer}" /></td></tr>
-        <tr><td>仕様：</td><td><input type="text" th:field="*{specification}" /></td></tr>
-        <tr><td>取得価格：</td><td><input type="number" step="0.01" th:field="*{cost}" required /></td></tr>
-        <tr>
-            <td>購入日：</td>
-            <td>
-                <input type="number" name="purchaseYear" placeholder="年" required style="width: 80px;"> 年
-                <input type="number" name="purchaseMonth" placeholder="月" required style="width: 60px;"> 月
-                <input type="number" name="purchaseDay" placeholder="日" required style="width: 60px;"> 日
-            </td>
-        </tr>
-        <tr><td>数量：</td><td><input type="number" min="1" th:field="*{quantity}" required /></td></tr>
-        <tr>
-            <td>設置場所：</td>
-            <td>
-                <select th:field="*{locationCode}" required>
-                    <option value="" disabled th:selected="${equipmentForm.locationCode == null}">選択してください</option>
-                    <option th:each="loc : ${locationOptions}" th:value="${loc}"
-                            th:text="${loc == 'TOKYO' ? '東京本店' :
-                                      loc == 'SENDAI' ? '仙台支店' :
-                                      loc == 'NIIGATA' ? '新潟支店' :
-                                      loc == 'YOKOHAMA' ? '横浜支店' :
-                                      loc == 'OSAKA' ? '大阪支店' :
-                                      loc == 'SAITAMA' ? '埼玉支店' : '不明'}"></option>
-                </select>
-            </td>
-        </tr>
-        <tr><td>使用不能：</td><td><input type="checkbox" th:field="*{isBroken}" /></td></tr>
-        <tr><td>貸出可能：</td><td><input type="checkbox" th:field="*{isAvailableForLoan}" /></td></tr>
-        <tr>
-            <td>使用期限：</td>
-            <td>
-                <input type="number" name="usageDeadlineYear" min="1900" max="2100" placeholder="年" style="width: 80px;"> 年
-                <input type="number" name="usageDeadlineMonth" min="1" max="12" placeholder="月" style="width: 60px;"> 月
-                <input type="number" name="usageDeadlineDay" min="1" max="31" placeholder="日" style="width: 60px;"> 日
-            </td>
-        </tr>
-        <tr><td>廃棄済み：</td><td><input type="checkbox" th:field="*{isDisposed}" /></td></tr>
-    </table>
-    <button type="submit">登録</button>
-</form>
+        <form th:action="@{/equipment/create}" method="post" th:object="${equipmentForm}">
+            <table>
+                <tr>
+                    <th>カテゴリ <span class="required">*</span></th>
+                    <td>
+                        <select id="categorySelect" th:field="*{categoryCode}" required>
+                            <option value="" disabled th:selected="${equipmentForm.categoryCode == null}">選択してください</option>
+                            <option th:each="cat : ${categoryOptions}" th:value="${cat.code}"
+                                    th:text="${cat.label}"></option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <th>品目 <span class="required">*</span></th>
+                    <td>
+                        <select id="itemSelect" th:field="*{itemCode}" required>
+                            <option value="" disabled th:selected="${equipmentForm.itemCode == null}">選択してください</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <th>名前 <span class="required">*</span></th>
+                    <td><input type="text" th:field="*{name}" required /></td>
+                </tr>
+                <tr>
+                    <th>型番</th>
+                    <td><input type="text" th:field="*{modelNumber}" /></td>
+                </tr>
+                <tr>
+                    <th>メーカー</th>
+                    <td><input type="text" th:field="*{manufacturer}" /></td>
+                </tr>
+                <tr>
+                    <th>仕様</th>
+                    <td><input type="text" th:field="*{specification}" /></td>
+                </tr>
+                <tr>
+                    <th>取得価格 <span class="required">*</span></th>
+                    <td><input type="number" step="0.01" th:field="*{cost}" required /></td>
+                </tr>
+                <tr>
+                    <th>購入日 <span class="required">*</span></th>
+                    <td>
+                        <div class="date-inputs">
+                            <input type="number" name="purchaseYear" placeholder="年" required min="1900" max="2100">
+                            <span>年</span>
+                            <input type="number" name="purchaseMonth" placeholder="月" required min="1" max="12">
+                            <span>月</span>
+                            <input type="number" name="purchaseDay" placeholder="日" required min="1" max="31">
+                            <span>日</span>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <th>数量 <span class="required">*</span></th>
+                    <td><input type="number" min="1" th:field="*{quantity}" required /></td>
+                </tr>
+                <tr>
+                    <th>設置場所 <span class="required">*</span></th>
+                    <td>
+                        <select th:field="*{locationCode}" required>
+                            <option value="" disabled th:selected="${equipmentForm.locationCode == null}">選択してください</option>
+                            <option th:each="loc : ${locationOptions}" th:value="${loc}"
+                                    th:text="${loc == 'TOKYO' ? '東京本店' :
+                                              loc == 'SENDAI' ? '仙台支店' :
+                                              loc == 'NIIGATA' ? '新潟支店' :
+                                              loc == 'YOKOHAMA' ? '横浜支店' :
+                                              loc == 'OSAKA' ? '大阪支店' :
+                                              loc == 'SAITAMA' ? '埼玉支店' : '不明'}"></option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <th>使用不能</th>
+                    <td>
+                        <div class="checkbox-container">
+                            <input type="checkbox" th:field="*{isBroken}" />
+                            <label>使用できない状態です</label>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <th>貸出可能</th>
+                    <td>
+                        <div class="checkbox-container">
+                            <input type="checkbox" th:field="*{isAvailableForLoan}" />
+                            <label>貸出が可能です</label>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <th>使用期限</th>
+                    <td>
+                        <div class="date-inputs">
+                            <input type="number" name="usageDeadlineYear" min="1900" max="2100" placeholder="年">
+                            <span>年</span>
+                            <input type="number" name="usageDeadlineMonth" min="1" max="12" placeholder="月">
+                            <span>月</span>
+                            <input type="number" name="usageDeadlineDay" min="1" max="31" placeholder="日">
+                            <span>日</span>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <th>廃棄済み</th>
+                    <td>
+                        <div class="checkbox-container">
+                            <input type="checkbox" th:field="*{isDisposed}" />
+                            <label>廃棄済みです</label>
+                        </div>
+                    </td>
+                </tr>
+            </table>
 
-<p><a th:href="@{/equipment/list}">← 一覧に戻る</a></p>
+            <div class="button-container">
+                <button type="submit" class="btn-primary">登録</button>
+                <a th:href="@{/equipment/list}" class="btn-secondary">キャンセル</a>
+            </div>
+        </form>
+    </div>
 
-<script th:inline="javascript">
-    /*<![CDATA[*/
-    const selectedCategory = /*[[${equipmentForm.categoryCode != null ? '\'' + equipmentForm.categoryCode + '\'' : 'null'}]]*/ null;
-    const selectedItem = /*[[${equipmentForm.itemCode != null ? '\'' + equipmentForm.itemCode + '\'' : 'null'}]]*/ null;
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const selectedCategory = /*[[${equipmentForm.categoryCode != null ? '\'' + equipmentForm.categoryCode + '\'' : 'null'}]]*/ null;
+        const selectedItem = /*[[${equipmentForm.itemCode != null ? '\'' + equipmentForm.itemCode + '\'' : 'null'}]]*/ null;
 
-    const categorySelect = document.getElementById('categorySelect');
-    const itemSelect = document.getElementById('itemSelect');
+        const categorySelect = document.getElementById('categorySelect');
+        const itemSelect = document.getElementById('itemSelect');
 
-    // カテゴリ変更時に品目コードを動的取得
-    async function updateItemOptions() {
-        const selectedCat = categorySelect.value;
-        
-        // 品目選択をクリア
-        itemSelect.innerHTML = '<option value="" disabled>選択してください</option>';
-        
-        if (!selectedCat) return;
-        
-        try {
-            const response = await fetch(`/equipment/api/items/${selectedCat}`);
-            const items = await response.json();
+        // カテゴリ変更時に品目コードを動的取得
+        async function updateItemOptions() {
+            const selectedCat = categorySelect.value;
             
-            items.forEach(item => {
-                const option = document.createElement('option');
-                option.value = item.code;
-                option.text = item.label;
-                if (selectedItem === item.code) {
-                    option.selected = true;
-                }
-                itemSelect.appendChild(option);
-            });
-        } catch (error) {
-            console.error('品目コード取得エラー:', error);
+            // 品目選択をクリア
+            itemSelect.innerHTML = '<option value="" disabled>選択してください</option>';
+            
+            if (!selectedCat) return;
+            
+            try {
+                const response = await fetch(`/equipment/api/items/${selectedCat}`);
+                const items = await response.json();
+                
+                items.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.code;
+                    option.text = item.label;
+                    if (selectedItem === item.code) {
+                        option.selected = true;
+                    }
+                    itemSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('品目コード取得エラー:', error);
+            }
         }
-    }
 
-    categorySelect.addEventListener('change', updateItemOptions);
+        categorySelect.addEventListener('change', updateItemOptions);
 
-    // ページロード時にカテゴリ選択と品目コード選択を復元
-    window.addEventListener('load', () => {
-        if (selectedCategory) {
-            categorySelect.value = selectedCategory;
-            updateItemOptions();
-        }
-    });
-    /*]]>*/
-</script>
-
+        // ページロード時にカテゴリ選択と品目コード選択を復元
+        window.addEventListener('load', () => {
+            if (selectedCategory) {
+                categorySelect.value = selectedCategory;
+                updateItemOptions();
+            }
+        });
+        /*]]>*/
+    </script>
 </body>
 </html>

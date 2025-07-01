@@ -4,79 +4,301 @@
     <meta charset="UTF-8" />
     <title>設備編集</title>
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+
+        .form-container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 800px;
+        }
+
         table {
+            width: 100%;
             border-collapse: collapse;
-            width: 50%;
+            margin-bottom: 20px;
         }
+
         th, td {
-            padding: 8px;
+            padding: 12px;
             text-align: left;
+            border-bottom: 1px solid #ddd;
         }
+
         th {
-            width: 150px;
+            background-color: #f8f9fa;
+            font-weight: bold;
+            width: 180px;
+            color: #555;
+        }
+
+        input[type="text"], 
+        input[type="number"], 
+        input[type="date"], 
+        select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        input[type="text"]:focus, 
+        input[type="number"]:focus, 
+        input[type="date"]:focus, 
+        select:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+        }
+
+        input[type="checkbox"] {
+            transform: scale(1.2);
+            margin-right: 8px;
+        }
+
+        .button-container {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .btn-primary {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 15px;
+            transition: background-color 0.3s;
+        }
+
+        .btn-primary:hover {
+            background-color: #45a049;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            text-decoration: none;
+            display: inline-block;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+            text-decoration: none;
+            color: white;
+        }
+
+        .required {
+            color: red;
+            font-weight: bold;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
         }
     </style>
 </head>
 <body>
-<h1>設備編集</h1>
+    <div class="form-container">
+        <h1>設備編集</h1>
 
-<form th:action="@{/equipment/update}" th:object="${equipmentForm}" method="post">
-    <input type="hidden" th:field="*{id}" />
-    <table>
-        <tr>
-            <th>管理番号</th>
-            <td><input type="text" th:field="*{managementNumber}" required /></td>
-        </tr>
-        <tr>
-            <th>カテゴリコード</th>
-            <td><input type="text" th:field="*{categoryCode}" required /></td>
-        </tr>
-        <tr>
-            <th>品目コード</th>
-            <td><input type="text" th:field="*{itemCode}" required /></td>
-        </tr>
-        <tr>
-            <th>名前</th>
-            <td><input type="text" th:field="*{name}" required /></td>
-        </tr>
-        <tr>
-            <th>取得価格</th>
-            <td><input type="number" th:field="*{cost}" step="0.01" required /></td>
-        </tr>
-        <tr>
-            <th>購入日</th>
-            <td><input type="date" th:field="*{purchaseDate}" required /></td>
-        </tr>
-        <tr>
-            <th>数量</th>
-            <td><input type="number" th:field="*{quantity}" min="1" required /></td>
-        </tr>
-        <tr>
-            <th>設置場所</th>
-            <td>
-                <select th:field="*{locationCode}">
-                    <option value="" disabled th:selected="${equipmentForm.locationCode == null}">選択してください</option>
-                    <option th:each="loc : ${locationOptions}" th:value="${loc}"
-                        th:text="${loc == 'TOKYO' ? '東京本店' :
-                                  loc == 'SENDAI' ? '仙台支店' :
-                                  loc == 'NIIGATA' ? '新潟支店' :
-                                  loc == 'YOKOHAMA' ? '横浜支店' :
-                                  loc == 'OSAKA' ? '大阪支店' :
-                                  loc == 'SAITAMA' ? '埼玉支店' : '不明'}"
-                        th:selected="${equipmentForm.locationCode == loc}">
-                    </option>
-                </select>
-            </td>
-        </tr>
-        <tr>
-            <th>廃棄済み</th>
-            <td><input type="checkbox" th:field="*{isDisposed}" /></td>
-        </tr>
-    </table>
-    <br />
-    <input type="submit" value="更新" />
-    <a href="/equipment/list">キャンセル</a>
-</form>
+        <form th:action="@{/equipment/update}" th:object="${equipmentForm}" method="post">
+            <input type="hidden" th:field="*{id}" />
+            <input type="hidden" th:field="*{categoryCode}" id="hiddenCategoryCode" />
+            <input type="hidden" th:field="*{itemCode}" id="hiddenItemCode" />
+            <table>
+                <tr>
+                    <th>管理番号 <span class="required">*</span></th>
+                    <td><input type="text" th:field="*{managementNumber}" required /></td>
+                </tr>
+                <tr>
+                    <th>カテゴリ <span class="required">*</span></th>
+                    <td>
+                        <select id="categorySelect" required>
+                            <option value="" disabled>選択してください</option>
+                            <option th:each="cat : ${categoryOptions}" th:value="${cat.code}"
+                                    th:text="${cat.label}"></option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <th>品目 <span class="required">*</span></th>
+                    <td>
+                        <select id="itemSelect" required>
+                            <option value="" disabled>選択してください</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <th>名前 <span class="required">*</span></th>
+                    <td><input type="text" th:field="*{name}" required /></td>
+                </tr>
+                <tr>
+                    <th>型番</th>
+                    <td><input type="text" th:field="*{modelNumber}" /></td>
+                </tr>
+                <tr>
+                    <th>メーカー</th>
+                    <td><input type="text" th:field="*{manufacturer}" /></td>
+                </tr>
+                <tr>
+                    <th>仕様</th>
+                    <td><input type="text" th:field="*{specification}" /></td>
+                </tr>
+                <tr>
+                    <th>取得価格 <span class="required">*</span></th>
+                    <td><input type="number" th:field="*{cost}" step="0.01" required /></td>
+                </tr>
+                <tr>
+                    <th>購入日 <span class="required">*</span></th>
+                    <td><input type="date" th:field="*{purchaseDate}" required /></td>
+                </tr>
+                <tr>
+                    <th>数量 <span class="required">*</span></th>
+                    <td><input type="number" th:field="*{quantity}" min="1" required /></td>
+                </tr>
+                <tr>
+                    <th>設置場所 <span class="required">*</span></th>
+                    <td>
+                        <select th:field="*{locationCode}" required>
+                            <option value="" disabled th:selected="${equipmentForm.locationCode == null}">選択してください</option>
+                            <option th:each="loc : ${locationOptions}" th:value="${loc}"
+                                th:text="${loc == 'TOKYO' ? '東京本店' :
+                                          loc == 'SENDAI' ? '仙台支店' :
+                                          loc == 'NIIGATA' ? '新潟支店' :
+                                          loc == 'YOKOHAMA' ? '横浜支店' :
+                                          loc == 'OSAKA' ? '大阪支店' :
+                                          loc == 'SAITAMA' ? '埼玉支店' : '不明'}"
+                                th:selected="${equipmentForm.locationCode == loc}">
+                            </option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <th>使用不能</th>
+                    <td>
+                        <div class="checkbox-container">
+                            <input type="checkbox" th:field="*{isBroken}" />
+                            <label>使用できない状態です</label>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <th>貸出可能</th>
+                    <td>
+                        <div class="checkbox-container">
+                            <input type="checkbox" th:field="*{isAvailableForLoan}" />
+                            <label>貸出が可能です</label>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <th>使用期限</th>
+                    <td><input type="date" th:field="*{usageDeadline}" /></td>
+                </tr>
+                <tr>
+                    <th>廃棄済み</th>
+                    <td>
+                        <div class="checkbox-container">
+                            <input type="checkbox" th:field="*{isDisposed}" />
+                            <label>廃棄済みです</label>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+
+            <div class="button-container">
+                <button type="submit" class="btn-primary">更新</button>
+                <a th:href="@{/equipment/list}" class="btn-secondary">キャンセル</a>
+            </div>
+        </form>
+    </div>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const currentCategoryCode = /*[[${equipmentForm.categoryCode}]]*/ null;
+    const currentItemCode = /*[[${equipmentForm.itemCode}]]*/ null;
+
+    const categorySelect = document.getElementById('categorySelect');
+    const itemSelect = document.getElementById('itemSelect');
+    const hiddenCategoryCode = document.getElementById('hiddenCategoryCode');
+    const hiddenItemCode = document.getElementById('hiddenItemCode');
+
+    // カテゴリ変更時に品目コードを動的取得
+    async function updateItemOptions() {
+        const selectedCat = categorySelect.value;
+        
+        // 品目選択をクリア
+        itemSelect.innerHTML = '<option value="" disabled>選択してください</option>';
+        
+        if (!selectedCat) {
+            hiddenCategoryCode.value = '';
+            hiddenItemCode.value = '';
+            return;
+        }
+        
+        // 隠しフィールドを更新
+        hiddenCategoryCode.value = selectedCat;
+        
+        try {
+            const response = await fetch(`/equipment/api/items/${selectedCat}`);
+            const items = await response.json();
+            
+            items.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.code;
+                option.text = item.label;
+                if (currentItemCode === item.code) {
+                    option.selected = true;
+                    hiddenItemCode.value = item.code;
+                }
+                itemSelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error('品目コード取得エラー:', error);
+        }
+    }
+
+    // 品目選択時に隠しフィールドを更新
+    itemSelect.addEventListener('change', function() {
+        hiddenItemCode.value = this.value;
+    });
+
+    categorySelect.addEventListener('change', updateItemOptions);
+
+    // ページロード時にカテゴリ選択と品目コード選択を復元
+    window.addEventListener('load', () => {
+        if (currentCategoryCode) {
+            categorySelect.value = currentCategoryCode;
+            updateItemOptions();
+        }
+    });
+    /*]]>*/
+</script>
 
 </body>
 </html>
