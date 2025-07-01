@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>設備登録</title>
+</head>
+<body>
+<h1>新規設備登録</h1>
+
+<form th:action="@{/equipment/create}" method="post" th:object="${equipmentForm}">
+    <table>
+        <tr>
+            <td>カテゴリコード：</td>
+            <td>
+                <select id="categorySelect" th:field="*{categoryCode}" required>
+                    <option value="" disabled th:selected="${equipmentForm.categoryCode == null}">選択してください</option>
+                    <option th:each="cat : ${categoryOptions}" th:value="${cat}"
+                            th:text="${cat}"></option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td>品目コード：</td>
+            <td>
+                <select id="itemSelect" th:field="*{itemCode}" required>
+                    <option value="" disabled th:selected="${equipmentForm.itemCode == null}">選択してください</option>
+                    <!-- JSで動的に埋めるため空にしておく -->
+                </select>
+            </td>
+        </tr>
+        <tr><td>名前：</td><td><input type="text" th:field="*{name}" required /></td></tr>
+        <tr><td>型番：</td><td><input type="text" th:field="*{modelNumber}" /></td></tr>
+        <tr><td>メーカー：</td><td><input type="text" th:field="*{manufacturer}" /></td></tr>
+        <tr><td>仕様：</td><td><input type="text" th:field="*{specification}" /></td></tr>
+        <tr><td>取得価格：</td><td><input type="number" step="0.01" th:field="*{cost}" required /></td></tr>
+        <tr>
+            <td>購入日：</td>
+            <td>
+                <input type="number" name="purchaseYear" placeholder="年" required style="width: 80px;"> 年
+                <input type="number" name="purchaseMonth" placeholder="月" required style="width: 60px;"> 月
+                <input type="number" name="purchaseDay" placeholder="日" required style="width: 60px;"> 日
+            </td>
+        </tr>
+        <tr><td>数量：</td><td><input type="number" min="1" th:field="*{quantity}" required /></td></tr>
+        <tr>
+            <td>設置場所：</td>
+            <td>
+                <select th:field="*{locationCode}" required>
+                    <option value="" disabled th:selected="${equipmentForm.locationCode == null}">選択してください</option>
+                    <option th:each="loc : ${locationOptions}" th:value="${loc}"
+                            th:text="${loc == 'TOKYO' ? '東京本店' :
+                                      loc == 'SENDAI' ? '仙台支店' :
+                                      loc == 'NIIGATA' ? '新潟支店' :
+                                      loc == 'YOKOHAMA' ? '横浜支店' :
+                                      loc == 'OSAKA' ? '大阪支店' :
+                                      loc == 'SAITAMA' ? '埼玉支店' : '不明'}"></option>
+                </select>
+            </td>
+        </tr>
+        <tr><td>使用不能：</td><td><input type="checkbox" th:field="*{isBroken}" /></td></tr>
+        <tr><td>貸出可能：</td><td><input type="checkbox" th:field="*{isAvailableForLoan}" /></td></tr>
+        <tr>
+            <td>使用期限：</td>
+            <td>
+                <input type="number" name="usageDeadlineYear" min="1900" max="2100" placeholder="年" style="width: 80px;"> 年
+                <input type="number" name="usageDeadlineMonth" min="1" max="12" placeholder="月" style="width: 60px;"> 月
+                <input type="number" name="usageDeadlineDay" min="1" max="31" placeholder="日" style="width: 60px;"> 日
+            </td>
+        </tr>
+        <tr><td>廃棄済み：</td><td><input type="checkbox" th:field="*{isDisposed}" /></td></tr>
+    </table>
+    <button type="submit">登録</button>
+</form>
+
+<p><a th:href="@{/equipment/list}">← 一覧に戻る</a></p>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const categoryItemMap = /*[[${categoryItemMap}]]*/ {};
+    const selectedCategory = /*[[${equipmentForm.categoryCode != null ? '\'' + equipmentForm.categoryCode + '\'' : 'null'}]]*/ null;
+    const selectedItem = /*[[${equipmentForm.itemCode != null ? '\'' + equipmentForm.itemCode + '\'' : 'null'}]]*/ null;
+
+    const categorySelect = document.getElementById('categorySelect');
+    const itemSelect = document.getElementById('itemSelect');
+
+    function updateItemOptions() {
+        const selectedCat = categorySelect.value;
+        const items = categoryItemMap[selectedCat] || [];
+        itemSelect.innerHTML = '';
+        const placeholderOption = document.createElement('option');
+        placeholderOption.value = '';
+        placeholderOption.text = '選択してください';
+        placeholderOption.disabled = true;
+        itemSelect.appendChild(placeholderOption);
+
+        items.forEach(itemCode => {
+            const option = document.createElement('option');
+            option.value = itemCode;
+            option.text = itemCode; // 必要ならわかりやすい名前に変えてください
+            if (selectedItem === itemCode) {
+                option.selected = true;
+            }
+            itemSelect.appendChild(option);
+        });
+    }
+
+    categorySelect.addEventListener('change', () => {
+        updateItemOptions();
+    });
+
+    // ページロード時にカテゴリ選択と品目コード選択を復元
+    window.addEventListener('load', () => {
+        if (selectedCategory) {
+            categorySelect.value = selectedCategory;
+        }
+        updateItemOptions();
+    });
+    /*]]>*/
+</script>
+
+</body>
+</html>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>設備編集</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 50%;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            width: 150px;
+        }
+    </style>
+</head>
+<body>
+<h1>設備編集</h1>
+
+<form th:action="@{/equipment/update}" th:object="${equipmentForm}" method="post">
+    <input type="hidden" th:field="*{id}" />
+    <table>
+        <tr>
+            <th>管理番号</th>
+            <td><input type="text" th:field="*{managementNumber}" required /></td>
+        </tr>
+        <tr>
+            <th>カテゴリコード</th>
+            <td><input type="text" th:field="*{categoryCode}" required /></td>
+        </tr>
+        <tr>
+            <th>品目コード</th>
+            <td><input type="text" th:field="*{itemCode}" required /></td>
+        </tr>
+        <tr>
+            <th>名前</th>
+            <td><input type="text" th:field="*{name}" required /></td>
+        </tr>
+        <tr>
+            <th>取得価格</th>
+            <td><input type="number" th:field="*{cost}" step="0.01" required /></td>
+        </tr>
+        <tr>
+            <th>購入日</th>
+            <td><input type="date" th:field="*{purchaseDate}" required /></td>
+        </tr>
+        <tr>
+            <th>数量</th>
+            <td><input type="number" th:field="*{quantity}" min="1" required /></td>
+        </tr>
+        <tr>
+            <th>設置場所</th>
+            <td>
+                <select th:field="*{locationCode}">
+                    <option value="" disabled th:selected="${equipmentForm.locationCode == null}">選択してください</option>
+                    <option th:each="loc : ${locationOptions}" th:value="${loc}"
+                        th:text="${loc == 'TOKYO' ? '東京本店' :
+                                  loc == 'SENDAI' ? '仙台支店' :
+                                  loc == 'NIIGATA' ? '新潟支店' :
+                                  loc == 'YOKOHAMA' ? '横浜支店' :
+                                  loc == 'OSAKA' ? '大阪支店' :
+                                  loc == 'SAITAMA' ? '埼玉支店' : '不明'}"
+                        th:selected="${equipmentForm.locationCode == loc}">
+                    </option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <th>廃棄済み</th>
+            <td><input type="checkbox" th:field="*{isDisposed}" /></td>
+        </tr>
+    </table>
+    <br />
+    <input type="submit" value="更新" />
+    <a href="/equipment/list">キャンセル</a>
+</form>
+
+</body>
+</html>

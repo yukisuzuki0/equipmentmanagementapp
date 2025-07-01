@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>設備一覧</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th,
+        td {
+            border: 1px solid #999;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #eee;
+        }
+
+        .action-buttons form {
+            display: inline-block;
+            margin: 0 4px;
+        }
+
+        .circle {
+            font-weight: bold;
+            color: green;
+            text-align: center;
+        }
+
+        /* 右上ボタン用 */
+        .top-right-button {
+            text-align: right;
+            margin: 10px 0;
+        }
+
+        /* 新規登録ボタンデザイン */
+        .register-button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.2s;
+        }
+
+        .register-button:hover {
+            background-color: #45a049;
+        }
+    </style>
+
+</head>
+
+<body>
+    <h1>設備一覧</h1>
+
+
+    <div class="top-right-button">
+        <a th:href="@{/equipment/create-form}">
+            <button type="button" class="register-button">＋ 新規登録</button>
+        </a>
+    </div>
+
+
+    <table>
+        <thead>
+            <tr>
+                <th>管理番号</th>
+                <th>品名</th>
+                <th>型番</th>
+                <th>メーカー</th>
+                <th>仕様</th>
+                <th>購入日</th>
+                <th>耐用年数 (年)</th>
+                <th>減価償却</th>
+                <th>使用不能</th>
+                <th>貸出可能</th>
+                <th>設置場所</th>
+                <th>使用期限</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="equipment : ${equipments}">
+                <td th:text="${equipment.managementNumber}"></td>
+                <td th:text="${equipment.name}"></td>
+                <td th:text="${equipment.modelNumber}"></td>
+                <td th:text="${equipment.manufacturer}"></td>
+                <td th:text="${equipment.specification}"></td>
+                <td th:text="${equipment.purchaseDate}"></td>
+                <td th:text="${equipment.lifespanYears}"></td>
+                <td>
+                    <span th:if="${equipment.elapsedYears != null and equipment.lifespanYears != null}">
+                        <span
+                            th:text="${equipment.elapsedYears > equipment.lifespanYears ? '終了' : equipment.annualDepreciation != null ? #numbers.formatDecimal(equipment.annualDepreciation, 1, 'COMMA', 2, 'POINT') : '-'}"></span>
+                    </span>
+                    <span th:if="${equipment.elapsedYears == null or equipment.lifespanYears == null}">-</span>
+                </td>
+                <td class="circle" th:text="${equipment.isBroken} ? '〇' : ''"></td>
+                <td class="circle" th:text="${equipment.isAvailableForLoan} ? '〇' : ''"></td>
+                <td>
+                    <span th:switch="${equipment.locationCode}">
+                        <span th:case="'TOKYO'">東京本店</span>
+                        <span th:case="'SENDAI'">仙台支店</span>
+                        <span th:case="'NIIGATA'">新潟支店</span>
+                        <span th:case="'YOKOHAMA'">横浜支店</span>
+                        <span th:case="'OSAKA'">大阪支店</span>
+                        <span th:case="'SAITAMA'">埼玉支店</span>
+                        <span th:case="*">不明</span>
+                    </span>
+                </td>
+                <td
+                    th:text="${equipment.usageDeadline != null} ? '〜' + ${#dates.format(equipment.usageDeadline, 'yyyy/MM/dd')} : ''">
+                </td>
+                <td class="action-buttons">
+                    <form th:action="@{/equipment/edit}" method="get">
+                        <input type="hidden" name="id" th:value="${equipment.id}" />
+                        <button type="submit">編集</button>
+                    </form>
+                    <form th:action="@{/equipment/delete}" method="post" onsubmit="return confirm('削除してもよろしいですか？');">
+                        <input type="hidden" name="id" th:value="${equipment.id}" />
+                        <button type="submit" style="color: red;">削除</button>
+                    </form>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</body>
+
+</html>
