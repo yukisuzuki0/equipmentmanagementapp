@@ -54,6 +54,50 @@
         .register-button:hover {
             background-color: #45a049;
         }
+
+        /* 減価償却完了の行のスタイル */
+        .depreciation-completed {
+            background-color: #e3f2fd !important; /* 薄い青色 */
+        }
+
+        /* 廃棄済み設備の行のスタイル */
+        .disposed-equipment {
+            background-color: #f5f5f5 !important;
+            color: #888 !important;
+            opacity: 0.7;
+        }
+
+        .disposed-equipment td {
+            background-color: #f5f5f5 !important;
+            color: #888 !important;
+        }
+
+        /* 破損設備の行のスタイル */
+        .broken-equipment {
+            background-color: #f5f5f5 !important;
+            color: #888 !important;
+            opacity: 0.7;
+        }
+
+        .broken-equipment td {
+            background-color: #f5f5f5 !important;
+            color: #888 !important;
+        }
+
+        /* 減価償却完了セルの特別スタイル */
+        .depreciation-completed-cell {
+            background-color: #2196f3 !important; /* 濃い青色 */
+            color: white !important;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        /* グレーアウト時でも〇マークは見やすく */
+        .disposed-equipment .circle,
+        .broken-equipment .circle {
+            color: #666 !important;
+            font-weight: bold;
+        }
     </style>
 
 </head>
@@ -61,13 +105,11 @@
 <body>
     <h1>設備一覧</h1>
 
-
     <div class="top-right-button">
         <a th:href="@{/equipment/create-form}">
             <button type="button" class="register-button">＋ 新規登録</button>
         </a>
     </div>
-
 
     <table>
         <thead>
@@ -88,7 +130,11 @@
             </tr>
         </thead>
         <tbody>
-            <tr th:each="equipment : ${equipments}">
+            <tr th:each="equipment : ${equipments}"
+                th:class="${equipment.isDisposed ? 'disposed-equipment' : 
+                           equipment.isBroken ? 'broken-equipment' : 
+                           (equipment.elapsedYears != null and equipment.lifespanYears != null and equipment.elapsedYears >= equipment.lifespanYears) ? 'depreciation-completed' : ''}">
+                
                 <td th:text="${equipment.managementNumber}"></td>
                 <td th:text="${equipment.name}"></td>
                 <td th:text="${equipment.modelNumber}"></td>
@@ -96,15 +142,20 @@
                 <td th:text="${equipment.specification}"></td>
                 <td th:text="${equipment.purchaseDate}"></td>
                 <td th:text="${equipment.lifespanYears}"></td>
-                <td>
+                
+                <!-- 減価償却状況セル -->
+                <td th:class="${equipment.elapsedYears != null and equipment.lifespanYears != null and equipment.elapsedYears >= equipment.lifespanYears ? 'depreciation-completed-cell' : ''}">
                     <span th:if="${equipment.elapsedYears != null and equipment.lifespanYears != null}">
-                        <span
-                            th:text="${equipment.elapsedYears > equipment.lifespanYears ? '終了' : equipment.annualDepreciation != null ? #numbers.formatDecimal(equipment.annualDepreciation, 1, 'COMMA', 2, 'POINT') : '-'}"></span>
+                        <span th:text="${equipment.elapsedYears >= equipment.lifespanYears ? '完了' : 
+                                       equipment.annualDepreciation != null ? #numbers.formatDecimal(equipment.annualDepreciation, 1, 'COMMA', 2, 'POINT') : '-'}"></span>
                     </span>
                     <span th:if="${equipment.elapsedYears == null or equipment.lifespanYears == null}">-</span>
                 </td>
+                
                 <td class="circle" th:text="${equipment.isBroken} ? '〇' : ''"></td>
                 <td class="circle" th:text="${equipment.isAvailableForLoan} ? '〇' : ''"></td>
+                
+                <!-- 設置場所 -->
                 <td>
                     <span th:switch="${equipment.locationCode}">
                         <span th:case="'TOKYO'">東京本店</span>
@@ -116,9 +167,11 @@
                         <span th:case="*">不明</span>
                     </span>
                 </td>
-                <td
-                    th:text="${equipment.usageDeadline != null} ? '〜' + ${#dates.format(equipment.usageDeadline, 'yyyy/MM/dd')} : ''">
-                </td>
+                
+                <!-- 使用期限 -->
+                <td th:text="${equipment.usageDeadline != null} ? '〜' + ${#dates.format(equipment.usageDeadline, 'yyyy/MM/dd')} : ''"></td>
+                
+                <!-- 操作ボタン -->
                 <td class="action-buttons">
                     <form th:action="@{/equipment/edit}" method="get">
                         <input type="hidden" name="id" th:value="${equipment.id}" />
