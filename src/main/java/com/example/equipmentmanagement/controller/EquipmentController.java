@@ -1,8 +1,11 @@
 package com.example.equipmentmanagement.controller;
 
+import com.example.equipmentmanagement.dto.CategoryOption;
 import com.example.equipmentmanagement.dto.EquipmentDto;
 import com.example.equipmentmanagement.entity.Equipment;
+import com.example.equipmentmanagement.entity.EquipmentLifespan;
 import com.example.equipmentmanagement.repository.EquipmentRepository;
+import com.example.equipmentmanagement.repository.EquipmentLifespanRepository;
 import com.example.equipmentmanagement.service.DepreciationService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +18,7 @@ import java.time.Year;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.Comparator;
 
 @Controller
 @RequestMapping("/equipment")
@@ -24,48 +28,10 @@ public class EquipmentController {
     private EquipmentRepository equipmentRepository;
 
     @Autowired
+    private EquipmentLifespanRepository equipmentLifespanRepository;
+
+    @Autowired
     private DepreciationService depreciationService;
-
-    // カテゴリごとの品目コードマップ（例、必要に応じて変更）
-    private static final Map<String, List<String>> categoryItemMap = Map.ofEntries(
-    Map.entry("furniture", List.of(
-        "desk_metal", "desk_other", "sofa_commercial", "sofa_other", "bed",
-        "child_desk", "display_cool", "display_other", "furniture_commercial_other", "furniture_metal",
-        "furniture_other", "audio", "aircon_heater", "fridge_washer", "freezer_non_elec",
-        "fabric_goods", "rug_commercial", "rug_other", "interior_metal", "interior_other",
-        "kitchen_glass", "kitchen_other", "other_metal", "other_other"
-    )),
-    Map.entry("office_communication", List.of(
-        "mimeograph_typing_print", "mimeograph_typing_other", "personal_computer", "computer_other",
-        "copier_cash_register", "office_equipment_other", "teletype_fax", "intercom_broadcast",
-        "telephone_digital", "telephone_other"
-    )),
-    Map.entry("clock_measure", List.of(
-        "clock", "weights", "test_measure_device"
-    )),
-    Map.entry("optical_photo", List.of(
-        "camera_projection", "enlarger_dryer"
-    )),
-    Map.entry("signage_ad", List.of(
-        "signage_neon_balloon", "mannequin_model", "other_metal", "other_other"
-    )),
-    Map.entry("container_safe", List.of(
-        "cylinder_welded", "cylinder_forged_chlorine", "cylinder_forged_other", "drum_large_container",
-        "drum_container_metal", "drum_container_other", "safe_handheld", "safe_other"
-    )),
-    Map.entry("beauty_equipment", List.of(
-        "beauty_device"
-    )),
-    Map.entry("medical_equipment", List.of(
-        "sterilization_device", "surgical_device", "dialysis_device", "rehab_device", "dispensing_device",
-        "dental_unit", "optical_fiberscope", "optical_other", "xray_electronic_mobile", "xray_electronic_other",
-        "other_ceramic_glass", "other_metal", "other_other"
-    )),
-    Map.entry("entertainment_sport", List.of(
-        "ball_game_equipment", "pachinko_bingo_shooting", "board_games", "sports_equipment"
-    ))
-);
-
 
     // 一覧表示
     @GetMapping("/list")
@@ -130,8 +96,14 @@ public class EquipmentController {
     public String showCreateForm(Model model) {
         model.addAttribute("equipmentForm", new Equipment());
         model.addAttribute("locationOptions", getLocationOptions());
-        model.addAttribute("categoryOptions", categoryItemMap.keySet().stream().toList());
+        
+        // データベースからカテゴリとアイテムのマッピングを取得
+        Map<String, List<String>> categoryItemMap = getCategoryItemMapFromDatabase();
+        List<String> categoryOptions = categoryItemMap.keySet().stream().sorted().collect(Collectors.toList());
+        
+        model.addAttribute("categoryOptions", categoryOptions);
         model.addAttribute("categoryItemMap", categoryItemMap);
+        
         return "equipment_create";
     }
 
@@ -158,14 +130,20 @@ public class EquipmentController {
         return "redirect:/equipment/list";
     }
 
-    // 編集画面表示（修正済み）
+    // 編集画面表示
     @GetMapping("/edit")
     public String editEquipment(@RequestParam("id") Integer id, Model model) {
         Equipment equipment = equipmentRepository.findById(id).orElseThrow();
         model.addAttribute("equipmentForm", equipment);
         model.addAttribute("locationOptions", getLocationOptions());
-        model.addAttribute("categoryOptions", categoryItemMap.keySet().stream().toList());
+        
+        // データベースからカテゴリとアイテムのマッピングを取得
+        Map<String, List<String>> categoryItemMap = getCategoryItemMapFromDatabase();
+        List<String> categoryOptions = categoryItemMap.keySet().stream().sorted().collect(Collectors.toList());
+        
+        model.addAttribute("categoryOptions", categoryOptions);
         model.addAttribute("categoryItemMap", categoryItemMap);
+        
         return "equipment_edit";
     }
 
@@ -183,6 +161,57 @@ public class EquipmentController {
         return "redirect:/equipment/list";
     }
 
+    // 設置場所変更用POSTメソッド（プルダウンから即更新）
+    @PostMapping("/update-location")
+    public String updateLocation(@RequestParam("id") Integer id, @RequestParam("locationCode") String locationCode) {
+        Equipment equipment = equipmentRepository.findById(id).orElseThrow();
+        equipment.setLocationCode(locationCode);
+        equipmentRepository.save(equipment);
+        return "redirect:/equipment/list";
+    }
+
+    // カテゴリ選択時のAjaxレスポンス
+    @GetMapping("/api/items/{categoryCode}")
+    @ResponseBody
+    public List<Map<String, String>> getItemsByCategory(@PathVariable String categoryCode) {
+        return equipmentLifespanRepository.findByCategoryCode(categoryCode)
+                .stream()
+                .map(lifespan -> Map.of(
+                    "code", lifespan.getItemCode(),
+                    "label", lifespan.getItemLabel() != null ? lifespan.getItemLabel() : lifespan.getItemCode()
+                ))
+                .collect(Collectors.toList());
+    }
+
+    // データベースからカテゴリ・品目コードマッピングを取得
+    private Map<String, List<String>> getCategoryItemMapFromDatabase() {
+        List<EquipmentLifespan> lifespans = equipmentLifespanRepository.findAll();
+        
+        return lifespans.stream()
+                .collect(Collectors.groupingBy(
+                    EquipmentLifespan::getCategoryCode,
+                    Collectors.mapping(
+                        EquipmentLifespan::getItemCode,
+                        Collectors.toList()
+                    )
+                ));
+    }
+    private List<CategoryOption> getCategoryOptionsFromDatabase() {
+        List<EquipmentLifespan> lifespans = equipmentLifespanRepository.findAll();
+    
+        Map<String, String> map = lifespans.stream()
+            .collect(Collectors.toMap(
+                EquipmentLifespan::getCategoryCode,
+                EquipmentLifespan::getCategoryLabel,
+                (existing, replacement) -> existing  // 重複は無視
+            ));
+    
+        return map.entrySet().stream()
+            .map(e -> new CategoryOption(e.getKey(), e.getValue()))
+            .sorted(Comparator.comparing(CategoryOption::getCode))
+            .toList();
+    }
+    
     // 設置場所コード→ラベル
     private String convertLocationCodeToLabel(String code) {
         if (code == null) return "不明";
@@ -199,15 +228,6 @@ public class EquipmentController {
 
     private List<String> getLocationOptions() {
         return List.of("TOKYO", "SENDAI", "NIIGATA", "YOKOHAMA", "OSAKA", "SAITAMA");
-    }
-
-    // 設置場所変更用POSTメソッド（プルダウンから即更新）
-    @PostMapping("/update-location")
-    public String updateLocation(@RequestParam("id") Integer id, @RequestParam("locationCode") String locationCode) {
-        Equipment equipment = equipmentRepository.findById(id).orElseThrow();
-        equipment.setLocationCode(locationCode);
-        equipmentRepository.save(equipment);
-        return "redirect:/equipment/list";
     }
 
     // 管理番号の自動生成
@@ -231,4 +251,5 @@ public class EquipmentController {
 
         return prefix + String.format("%04d", nextNumber);
     }
+    
 }

@@ -24,7 +24,6 @@
             <td>
                 <select id="itemSelect" th:field="*{itemCode}" required>
                     <option value="" disabled th:selected="${equipmentForm.itemCode == null}">選択してください</option>
-                    <!-- JSで動的に埋めるため空にしておく -->
                 </select>
             </td>
         </tr>
@@ -76,44 +75,47 @@
 
 <script th:inline="javascript">
     /*<![CDATA[*/
-    const categoryItemMap = /*[[${categoryItemMap}]]*/ {};
     const selectedCategory = /*[[${equipmentForm.categoryCode != null ? '\'' + equipmentForm.categoryCode + '\'' : 'null'}]]*/ null;
     const selectedItem = /*[[${equipmentForm.itemCode != null ? '\'' + equipmentForm.itemCode + '\'' : 'null'}]]*/ null;
 
     const categorySelect = document.getElementById('categorySelect');
     const itemSelect = document.getElementById('itemSelect');
 
-    function updateItemOptions() {
+    // カテゴリ変更時に品目コードを動的取得
+    async function updateItemOptions() {
         const selectedCat = categorySelect.value;
-        const items = categoryItemMap[selectedCat] || [];
-        itemSelect.innerHTML = '';
-        const placeholderOption = document.createElement('option');
-        placeholderOption.value = '';
-        placeholderOption.text = '選択してください';
-        placeholderOption.disabled = true;
-        itemSelect.appendChild(placeholderOption);
-
-        items.forEach(itemCode => {
-            const option = document.createElement('option');
-            option.value = itemCode;
-            option.text = itemCode; // 必要ならわかりやすい名前に変えてください
-            if (selectedItem === itemCode) {
-                option.selected = true;
-            }
-            itemSelect.appendChild(option);
-        });
+        
+        // 品目選択をクリア
+        itemSelect.innerHTML = '<option value="" disabled>選択してください</option>';
+        
+        if (!selectedCat) return;
+        
+        try {
+            const response = await fetch(`/equipment/api/items/${selectedCat}`);
+            const items = await response.json();
+            
+            items.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.code;
+                option.text = `${item.code} - ${item.label}`;
+                if (selectedItem === item.code) {
+                    option.selected = true;
+                }
+                itemSelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error('品目コード取得エラー:', error);
+        }
     }
 
-    categorySelect.addEventListener('change', () => {
-        updateItemOptions();
-    });
+    categorySelect.addEventListener('change', updateItemOptions);
 
     // ページロード時にカテゴリ選択と品目コード選択を復元
     window.addEventListener('load', () => {
         if (selectedCategory) {
             categorySelect.value = selectedCategory;
+            updateItemOptions();
         }
-        updateItemOptions();
     });
     /*]]>*/
 </script>
