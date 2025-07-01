@@ -15,7 +15,7 @@
                 <select id="categorySelect" th:field="*{categoryCode}" required>
                     <option value="" disabled th:selected="${equipmentForm.categoryCode == null}">選択してください</option>
                     <option th:each="cat : ${categoryOptions}" th:value="${cat.code}"
-                            th:text="${cat.code + ' - ' + cat.label}"></option>
+                            th:text="${cat.label}"></option>
                 </select>
             </td>
         </tr>
@@ -97,7 +97,7 @@
             items.forEach(item => {
                 const option = document.createElement('option');
                 option.value = item.code;
-                option.text = `${item.code} - ${item.label}`;
+                option.text = item.label;
                 if (selectedItem === item.code) {
                     option.selected = true;
                 }
