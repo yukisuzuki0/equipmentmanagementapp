@@ -14,8 +14,8 @@
             <td>
                 <select id="categorySelect" th:field="*{categoryCode}" required>
                     <option value="" disabled th:selected="${equipmentForm.categoryCode == null}">選択してください</option>
-                    <option th:each="cat : ${categoryOptions}" th:value="${cat}"
-                            th:text="${cat}"></option>
+                    <option th:each="cat : ${categoryOptions}" th:value="${cat.code}"
+                            th:text="${cat.code + ' - ' + cat.label}"></option>
                 </select>
             </td>
         </tr>

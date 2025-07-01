@@ -97,11 +97,12 @@ public class EquipmentController {
         model.addAttribute("equipmentForm", new Equipment());
         model.addAttribute("locationOptions", getLocationOptions());
         
+        // カテゴリーオプション（コード+ラベル）を取得
+        List<CategoryOption> categoryOptions = getCategoryOptionsFromDatabase();
+        model.addAttribute("categoryOptions", categoryOptions);
+        
         // データベースからカテゴリとアイテムのマッピングを取得
         Map<String, List<String>> categoryItemMap = getCategoryItemMapFromDatabase();
-        List<String> categoryOptions = categoryItemMap.keySet().stream().sorted().collect(Collectors.toList());
-        
-        model.addAttribute("categoryOptions", categoryOptions);
         model.addAttribute("categoryItemMap", categoryItemMap);
         
         return "equipment_create";
@@ -137,11 +138,12 @@ public class EquipmentController {
         model.addAttribute("equipmentForm", equipment);
         model.addAttribute("locationOptions", getLocationOptions());
         
+        // カテゴリーオプション（コード+ラベル）を取得
+        List<CategoryOption> categoryOptions = getCategoryOptionsFromDatabase();
+        model.addAttribute("categoryOptions", categoryOptions);
+        
         // データベースからカテゴリとアイテムのマッピングを取得
         Map<String, List<String>> categoryItemMap = getCategoryItemMapFromDatabase();
-        List<String> categoryOptions = categoryItemMap.keySet().stream().sorted().collect(Collectors.toList());
-        
-        model.addAttribute("categoryOptions", categoryOptions);
         model.addAttribute("categoryItemMap", categoryItemMap);
         
         return "equipment_edit";
@@ -196,6 +198,8 @@ public class EquipmentController {
                     )
                 ));
     }
+
+    // カテゴリーオプション（コード+ラベル）を取得
     private List<CategoryOption> getCategoryOptionsFromDatabase() {
         List<EquipmentLifespan> lifespans = equipmentLifespanRepository.findAll();
     
@@ -251,5 +255,4 @@ public class EquipmentController {
 
         return prefix + String.format("%04d", nextNumber);
     }
-    
 }
