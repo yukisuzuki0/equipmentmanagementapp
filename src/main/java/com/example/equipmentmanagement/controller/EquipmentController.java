@@ -63,7 +63,8 @@ public class EquipmentController {
             dto.setLifespanYears(lifespan);
 
             if (e.getPurchaseDate() != null && lifespan > 0) {
-                int elapsed = Math.min(java.time.Period.between(e.getPurchaseDate(), LocalDate.now()).getYears(), lifespan);
+                int elapsed = Math.min(java.time.Period.between(e.getPurchaseDate(), LocalDate.now()).getYears(),
+                        lifespan);
                 dto.setElapsedYears(elapsed);
 
                 if (elapsed > lifespan) {
@@ -96,15 +97,15 @@ public class EquipmentController {
     public String showCreateForm(Model model) {
         model.addAttribute("equipmentForm", new Equipment());
         model.addAttribute("locationOptions", getLocationOptions());
-        
+
         // カテゴリーオプション（コード+ラベル）を取得
         List<CategoryOption> categoryOptions = getCategoryOptionsFromDatabase();
         model.addAttribute("categoryOptions", categoryOptions);
-        
+
         // データベースからカテゴリとアイテムのマッピングを取得
         Map<String, List<String>> categoryItemMap = getCategoryItemMapFromDatabase();
         model.addAttribute("categoryItemMap", categoryItemMap);
-        
+
         return "equipment_create";
     }
 
@@ -137,21 +138,38 @@ public class EquipmentController {
         Equipment equipment = equipmentRepository.findById(id).orElseThrow();
         model.addAttribute("equipmentForm", equipment);
         model.addAttribute("locationOptions", getLocationOptions());
-        
+
         // カテゴリーオプション（コード+ラベル）を取得
         List<CategoryOption> categoryOptions = getCategoryOptionsFromDatabase();
         model.addAttribute("categoryOptions", categoryOptions);
-        
+
         // データベースからカテゴリとアイテムのマッピングを取得
         Map<String, List<String>> categoryItemMap = getCategoryItemMapFromDatabase();
         model.addAttribute("categoryItemMap", categoryItemMap);
-        
+
         return "equipment_edit";
     }
 
     // 更新処理
+    // 更新処理
     @PostMapping("/update")
-    public String updateEquipment(@ModelAttribute Equipment equipment) {
+    public String updateEquipment(
+            @RequestParam("purchaseYear") int year,
+            @RequestParam("purchaseMonth") int month,
+            @RequestParam("purchaseDay") int day,
+            @RequestParam(value = "usageDeadlineYear", required = false) Integer usageYear,
+            @RequestParam(value = "usageDeadlineMonth", required = false) Integer usageMonth,
+            @RequestParam(value = "usageDeadlineDay", required = false) Integer usageDay,
+            @ModelAttribute Equipment equipment) {
+
+        equipment.setPurchaseDate(LocalDate.of(year, month, day));
+
+        if (usageYear != null && usageMonth != null && usageDay != null) {
+            equipment.setUsageDeadline(LocalDate.of(usageYear, usageMonth, usageDay));
+        } else {
+            equipment.setUsageDeadline(null);
+        }
+
         equipmentRepository.save(equipment);
         return "redirect:/equipment/list";
     }
@@ -179,46 +197,44 @@ public class EquipmentController {
         return equipmentLifespanRepository.findByCategoryCode(categoryCode)
                 .stream()
                 .map(lifespan -> Map.of(
-                    "code", lifespan.getItemCode(),
-                    "label", lifespan.getItemLabel() != null ? lifespan.getItemLabel() : lifespan.getItemCode()
-                ))
+                        "code", lifespan.getItemCode(),
+                        "label", lifespan.getItemLabel() != null ? lifespan.getItemLabel() : lifespan.getItemCode()))
                 .collect(Collectors.toList());
     }
 
     // データベースからカテゴリ・品目コードマッピングを取得
     private Map<String, List<String>> getCategoryItemMapFromDatabase() {
         List<EquipmentLifespan> lifespans = equipmentLifespanRepository.findAll();
-        
+
         return lifespans.stream()
                 .collect(Collectors.groupingBy(
-                    EquipmentLifespan::getCategoryCode,
-                    Collectors.mapping(
-                        EquipmentLifespan::getItemCode,
-                        Collectors.toList()
-                    )
-                ));
+                        EquipmentLifespan::getCategoryCode,
+                        Collectors.mapping(
+                                EquipmentLifespan::getItemCode,
+                                Collectors.toList())));
     }
 
     // カテゴリーオプション（コード+ラベル）を取得
     private List<CategoryOption> getCategoryOptionsFromDatabase() {
         List<EquipmentLifespan> lifespans = equipmentLifespanRepository.findAll();
-    
+
         Map<String, String> map = lifespans.stream()
-            .collect(Collectors.toMap(
-                EquipmentLifespan::getCategoryCode,
-                EquipmentLifespan::getCategoryLabel,
-                (existing, replacement) -> existing  // 重複は無視
-            ));
-    
+                .collect(Collectors.toMap(
+                        EquipmentLifespan::getCategoryCode,
+                        EquipmentLifespan::getCategoryLabel,
+                        (existing, replacement) -> existing // 重複は無視
+                ));
+
         return map.entrySet().stream()
-            .map(e -> new CategoryOption(e.getKey(), e.getValue()))
-            .sorted(Comparator.comparing(CategoryOption::getCode))
-            .toList();
+                .map(e -> new CategoryOption(e.getKey(), e.getValue()))
+                .sorted(Comparator.comparing(CategoryOption::getCode))
+                .toList();
     }
-    
+
     // 設置場所コード→ラベル
     private String convertLocationCodeToLabel(String code) {
-        if (code == null) return "不明";
+        if (code == null)
+            return "不明";
         return switch (code.toUpperCase()) {
             case "TOKYO" -> "東京本店";
             case "SENDAI" -> "仙台支店";
@@ -250,7 +266,8 @@ public class EquipmentController {
             String last = numbers.get(numbers.size() - 1);
             try {
                 nextNumber = Integer.parseInt(last.substring(prefix.length())) + 1;
-            } catch (NumberFormatException ignored) {}
+            } catch (NumberFormatException ignored) {
+            }
         }
 
         return prefix + String.format("%04d", nextNumber);

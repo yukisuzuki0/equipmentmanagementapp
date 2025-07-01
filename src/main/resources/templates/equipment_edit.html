@@ -69,6 +69,22 @@
             margin-right: 8px;
         }
 
+        .date-inputs {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .date-inputs input {
+            width: 80px;
+            text-align: center;
+        }
+
+        .date-inputs span {
+            font-weight: bold;
+            color: #666;
+        }
+
         .button-container {
             text-align: center;
             margin-top: 30px;
@@ -175,7 +191,16 @@
                 </tr>
                 <tr>
                     <th>購入日 <span class="required">*</span></th>
-                    <td><input type="date" th:field="*{purchaseDate}" required /></td>
+                    <td>
+                        <div class="date-inputs">
+                            <input type="number" name="purchaseYear" placeholder="年" required min="1900" max="2100" id="purchaseYear">
+                            <span>年</span>
+                            <input type="number" name="purchaseMonth" placeholder="月" required min="1" max="12" id="purchaseMonth">
+                            <span>月</span>
+                            <input type="number" name="purchaseDay" placeholder="日" required min="1" max="31" id="purchaseDay">
+                            <span>日</span>
+                        </div>
+                    </td>
                 </tr>
                 <tr>
                     <th>数量 <span class="required">*</span></th>
@@ -218,7 +243,16 @@
                 </tr>
                 <tr>
                     <th>使用期限</th>
-                    <td><input type="date" th:field="*{usageDeadline}" /></td>
+                    <td>
+                        <div class="date-inputs">
+                            <input type="number" name="usageDeadlineYear" min="1900" max="2100" placeholder="年" id="usageDeadlineYear">
+                            <span>年</span>
+                            <input type="number" name="usageDeadlineMonth" min="1" max="12" placeholder="月" id="usageDeadlineMonth">
+                            <span>月</span>
+                            <input type="number" name="usageDeadlineDay" min="1" max="31" placeholder="日" id="usageDeadlineDay">
+                            <span>日</span>
+                        </div>
+                    </td>
                 </tr>
                 <tr>
                     <th>廃棄済み</th>
@@ -242,11 +276,23 @@
     /*<![CDATA[*/
     const currentCategoryCode = /*[[${equipmentForm.categoryCode}]]*/ null;
     const currentItemCode = /*[[${equipmentForm.itemCode}]]*/ null;
+    const currentPurchaseDate = /*[[${equipmentForm.purchaseDate}]]*/ null;
+    const currentUsageDeadline = /*[[${equipmentForm.usageDeadline}]]*/ null;
 
     const categorySelect = document.getElementById('categorySelect');
     const itemSelect = document.getElementById('itemSelect');
     const hiddenCategoryCode = document.getElementById('hiddenCategoryCode');
     const hiddenItemCode = document.getElementById('hiddenItemCode');
+
+    // 購入日の設定
+    const purchaseYearInput = document.getElementById('purchaseYear');
+    const purchaseMonthInput = document.getElementById('purchaseMonth');
+    const purchaseDayInput = document.getElementById('purchaseDay');
+
+    // 使用期限の設定
+    const usageDeadlineYearInput = document.getElementById('usageDeadlineYear');
+    const usageDeadlineMonthInput = document.getElementById('usageDeadlineMonth');
+    const usageDeadlineDayInput = document.getElementById('usageDeadlineDay');
 
     // カテゴリ変更時に品目コードを動的取得
     async function updateItemOptions() {
@@ -290,12 +336,28 @@
 
     categorySelect.addEventListener('change', updateItemOptions);
 
+    // 日付文字列をパースして年月日の個別入力に設定する関数
+    function setParsedDate(dateString, yearInput, monthInput, dayInput) {
+        if (dateString) {
+            const date = new Date(dateString);
+            yearInput.value = date.getFullYear();
+            monthInput.value = date.getMonth() + 1;
+            dayInput.value = date.getDate();
+        }
+    }
+
     // ページロード時にカテゴリ選択と品目コード選択を復元
     window.addEventListener('load', () => {
         if (currentCategoryCode) {
             categorySelect.value = currentCategoryCode;
             updateItemOptions();
         }
+
+        // 購入日を年月日の個別入力に設定
+        setParsedDate(currentPurchaseDate, purchaseYearInput, purchaseMonthInput, purchaseDayInput);
+
+        // 使用期限を年月日の個別入力に設定
+        setParsedDate(currentUsageDeadline, usageDeadlineYearInput, usageDeadlineMonthInput, usageDeadlineDayInput);
     });
     /*]]>*/
 </script>
