@@ -20,26 +20,56 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.Comparator;
 
+/**
+ * 設備管理コントローラークラス
+ * 
+ * 設備管理システムのWebコントローラーです。
+ * 設備の一覧表示、登録、編集、削除等の画面処理とHTTPリクエストの処理を行います。
+ * 
+ * 主な機能：
+ * - 設備一覧表示（減価償却計算込み）
+ * - 設備の新規登録
+ * - 設備の編集・更新
+ * - 設備の削除（単体・複数）
+ * - 設置場所の変更
+ * - カテゴリー選択時の品目動的更新（Ajax）
+ * 
+ * @author Equipment Management Team
+ * @version 1.0
+ * @since 2024
+ */
 @Controller
 @RequestMapping("/equipment")
 public class EquipmentController {
 
+    /** 設備リポジトリ */
     @Autowired
     private EquipmentRepository equipmentRepository;
 
+    /** 設備寿命リポジトリ */
     @Autowired
     private EquipmentLifespanRepository equipmentLifespanRepository;
 
+    /** 減価償却計算サービス */
     @Autowired
     private DepreciationService depreciationService;
 
-    // 一覧表示
+    /**
+     * 設備一覧表示
+     * 
+     * 全設備の一覧を取得し、減価償却計算を行った結果を表示用DTOに変換して画面に渡します。
+     * 
+     * @param model SpringのModelオブジェクト
+     * @return 設備一覧画面のテンプレート名
+     */
     @GetMapping("/list")
     public String getEquipmentList(Model model) {
         List<Equipment> equipments = equipmentRepository.findAll();
 
+        // エンティティをDTO（表示用）に変換
         List<EquipmentDto> equipmentDtoList = equipments.stream().map(e -> {
             EquipmentDto dto = new EquipmentDto();
+            // 基本情報をコピー
             dto.setId(e.getId());
             dto.setManagementNumber(e.getManagementNumber());
             dto.setCategoryCode(e.getCategoryCode());
@@ -57,21 +87,26 @@ public class EquipmentController {
             dto.setIsAvailableForLoan(e.getIsAvailableForLoan());
             dto.setUsageDeadline(e.getUsageDeadline());
 
+            // 設置場所コードを表示用ラベルに変換
             dto.setLocationLabel(convertLocationCodeToLabel(e.getLocationCode()));
 
+            // 耐用年数を取得
             int lifespan = depreciationService.getLifespanYears(e);
             dto.setLifespanYears(lifespan);
 
+            // 減価償却計算
             if (e.getPurchaseDate() != null && lifespan > 0) {
                 int elapsed = Math.min(java.time.Period.between(e.getPurchaseDate(), LocalDate.now()).getYears(),
                         lifespan);
                 dto.setElapsedYears(elapsed);
 
                 if (elapsed > lifespan) {
+                    // 減価償却完了
                     dto.setDepreciationStatus("終了");
                     dto.setAnnualDepreciation(0.0);
                     dto.setBookValue(0.0);
                 } else {
+                    // 減価償却継続中
                     double annualDep = depreciationService.calculateAnnualDepreciation(e);
                     dto.setAnnualDepreciation(annualDep);
                     double bookValue = depreciationService.calculateBookValue(e, LocalDate.now());
@@ -79,6 +114,7 @@ public class EquipmentController {
                     dto.setDepreciationStatus(String.format("%.2f", annualDep));
                 }
             } else {
+                // 購入日や耐用年数が不明な場合
                 dto.setElapsedYears(0);
                 dto.setAnnualDepreciation(0.0);
                 dto.setBookValue(dto.getCost());
@@ -92,7 +128,15 @@ public class EquipmentController {
         return "equipment_list";
     }
 
-    // 登録フォーム表示
+    /**
+     * 設備登録フォーム表示
+     * 
+     * 新規設備登録画面を表示します。
+     * カテゴリーオプションと設置場所オプションを取得してフォームに渡します。
+     * 
+     * @param model SpringのModelオブジェクト
+     * @return 設備登録画面のテンプレート名
+     */
     @GetMapping("/create-form")
     public String showCreateForm(Model model) {
         model.addAttribute("equipmentForm", new Equipment());
@@ -109,7 +153,21 @@ public class EquipmentController {
         return "equipment_create";
     }
 
-    // 登録処理
+    /**
+     * 設備登録処理
+     * 
+     * フォームから送信された設備データを保存します。
+     * 管理番号を自動生成し、購入日と使用期限を設定します。
+     * 
+     * @param year 購入年
+     * @param month 購入月
+     * @param day 購入日
+     * @param usageYear 使用期限年（オプショナル）
+     * @param usageMonth 使用期限月（オプショナル）
+     * @param usageDay 使用期限日（オプショナル）
+     * @param equipment 設備エンティティ
+     * @return 設備一覧画面へのリダイレクト
+     */
     @PostMapping("/create")
     public String createEquipment(
             @RequestParam("purchaseYear") int year,
@@ -120,19 +178,30 @@ public class EquipmentController {
             @RequestParam(value = "usageDeadlineDay", required = false) Integer usageDay,
             @ModelAttribute Equipment equipment) {
 
+        // 購入日を設定
         equipment.setPurchaseDate(LocalDate.of(year, month, day));
 
+        // 使用期限を設定（任意）
         if (usageYear != null && usageMonth != null && usageDay != null) {
             equipment.setUsageDeadline(LocalDate.of(usageYear, usageMonth, usageDay));
         }
 
+        // 管理番号を自動生成
         equipment.setManagementNumber(generateNextManagementNumber());
         equipmentRepository.save(equipment);
 
         return "redirect:/equipment/list";
     }
 
-    // 編集画面表示
+    /**
+     * 設備編集画面表示
+     * 
+     * 指定されたIDの設備の編集画面を表示します。
+     * 
+     * @param id 編集対象の設備ID
+     * @param model SpringのModelオブジェクト
+     * @return 設備編集画面のテンプレート名
+     */
     @GetMapping("/edit")
     public String editEquipment(@RequestParam("id") Integer id, Model model) {
         Equipment equipment = equipmentRepository.findById(id).orElseThrow();
@@ -150,8 +219,20 @@ public class EquipmentController {
         return "equipment_edit";
     }
 
-    // 更新処理
-    // 更新処理
+    /**
+     * 設備更新処理
+     * 
+     * 編集フォームから送信された設備データで既存の設備を更新します。
+     * 
+     * @param year 購入年
+     * @param month 購入月
+     * @param day 購入日
+     * @param usageYear 使用期限年（オプショナル）
+     * @param usageMonth 使用期限月（オプショナル）
+     * @param usageDay 使用期限日（オプショナル）
+     * @param equipment 設備エンティティ
+     * @return 設備一覧画面へのリダイレクト
+     */
     @PostMapping("/update")
     public String updateEquipment(
             @RequestParam("purchaseYear") int year,
@@ -162,8 +243,10 @@ public class EquipmentController {
             @RequestParam(value = "usageDeadlineDay", required = false) Integer usageDay,
             @ModelAttribute Equipment equipment) {
 
+        // 購入日を設定
         equipment.setPurchaseDate(LocalDate.of(year, month, day));
 
+        // 使用期限を設定（任意）
         if (usageYear != null && usageMonth != null && usageDay != null) {
             equipment.setUsageDeadline(LocalDate.of(usageYear, usageMonth, usageDay));
         } else {
@@ -174,14 +257,29 @@ public class EquipmentController {
         return "redirect:/equipment/list";
     }
 
-    // 削除処理
+    /**
+     * 設備削除処理（単体）
+     * 
+     * 指定されたIDの設備を削除します。
+     * 
+     * @param id 削除対象の設備ID
+     * @return 設備一覧画面へのリダイレクト
+     */
     @PostMapping("/delete")
     public String deleteEquipment(@RequestParam("id") Integer id) {
         equipmentRepository.deleteById(id);
         return "redirect:/equipment/list";
     }
 
-    // 設置場所変更用POSTメソッド（プルダウンから即更新）
+    /**
+     * 設置場所変更処理
+     * 
+     * プルダウンメニューからの即時更新で設備の設置場所を変更します。
+     * 
+     * @param id 対象設備のID
+     * @param locationCode 新しい設置場所コード
+     * @return 設備一覧画面へのリダイレクト
+     */
     @PostMapping("/update-location")
     public String updateLocation(@RequestParam("id") Integer id, @RequestParam("locationCode") String locationCode) {
         Equipment equipment = equipmentRepository.findById(id).orElseThrow();
@@ -190,7 +288,15 @@ public class EquipmentController {
         return "redirect:/equipment/list";
     }
 
-    // カテゴリ選択時のAjaxレスポンス
+    /**
+     * カテゴリー選択時の品目取得API（Ajax用）
+     * 
+     * 指定されたカテゴリーコードに対応する品目一覧をJSON形式で返します。
+     * 設備登録・編集画面でカテゴリー選択時に動的に品目を更新するために使用されます。
+     * 
+     * @param categoryCode カテゴリーコード
+     * @return 品目一覧（JSON形式）
+     */
     @GetMapping("/api/items/{categoryCode}")
     @ResponseBody
     public List<Map<String, String>> getItemsByCategory(@PathVariable String categoryCode) {
@@ -202,7 +308,11 @@ public class EquipmentController {
                 .collect(Collectors.toList());
     }
 
-    // データベースからカテゴリ・品目コードマッピングを取得
+    /**
+     * データベースからカテゴリ・品目コードマッピングを取得
+     * 
+     * @return カテゴリーコードをキーとし、品目コードリストを値とするマップ
+     */
     private Map<String, List<String>> getCategoryItemMapFromDatabase() {
         List<EquipmentLifespan> lifespans = equipmentLifespanRepository.findAll();
 
@@ -214,7 +324,11 @@ public class EquipmentController {
                                 Collectors.toList())));
     }
 
-    // カテゴリーオプション（コード+ラベル）を取得
+    /**
+     * カテゴリーオプション（コード+ラベル）を取得
+     * 
+     * @return カテゴリーオプションのリスト
+     */
     private List<CategoryOption> getCategoryOptionsFromDatabase() {
         List<EquipmentLifespan> lifespans = equipmentLifespanRepository.findAll();
 
@@ -231,7 +345,12 @@ public class EquipmentController {
                 .toList();
     }
 
-    // 設置場所コード→ラベル
+    /**
+     * 設置場所コードを表示用ラベルに変換
+     * 
+     * @param code 設置場所コード
+     * @return 表示用ラベル
+     */
     private String convertLocationCodeToLabel(String code) {
         if (code == null)
             return "不明";
@@ -246,15 +365,28 @@ public class EquipmentController {
         };
     }
 
+    /**
+     * 設置場所オプション一覧を取得
+     * 
+     * @return 設置場所コードのリスト
+     */
     private List<String> getLocationOptions() {
         return List.of("TOKYO", "SENDAI", "NIIGATA", "YOKOHAMA", "OSAKA", "SAITAMA");
     }
 
-    // 管理番号の自動生成
+    /**
+     * 管理番号の自動生成
+     * 
+     * 現在年を使用して「EQ年-連番」形式の管理番号を生成します。
+     * 例：EQ2024-0001, EQ2024-0002...
+     * 
+     * @return 生成された管理番号
+     */
     private String generateNextManagementNumber() {
         int year = Year.now().getValue();
         String prefix = "EQ" + year + "-";
 
+        // 既存の管理番号から最大番号を取得
         List<String> numbers = equipmentRepository.findAll().stream()
                 .map(Equipment::getManagementNumber)
                 .filter(num -> num != null && num.startsWith(prefix))
@@ -273,11 +405,19 @@ public class EquipmentController {
         return prefix + String.format("%04d", nextNumber);
     }
 
-    // 削除モード画面表示
+    /**
+     * 削除モード画面表示
+     * 
+     * 複数の設備を選択して削除するための画面を表示します。
+     * 
+     * @param model SpringのModelオブジェクト
+     * @return 削除モード画面のテンプレート名
+     */
     @GetMapping("/delete-mode")
     public String showDeleteMode(Model model) {
         List<Equipment> equipments = equipmentRepository.findAll();
 
+        // 設備一覧表示と同様の処理でDTOに変換
         List<EquipmentDto> equipmentDtoList = equipments.stream().map(e -> {
             EquipmentDto dto = new EquipmentDto();
             dto.setId(e.getId());
@@ -332,7 +472,14 @@ public class EquipmentController {
         return "equipment_delete";
     }
 
-    // 複数削除処理
+    /**
+     * 複数設備削除処理
+     * 
+     * チェックボックスで選択された複数の設備を一括削除します。
+     * 
+     * @param selectedIds 削除対象の設備IDリスト
+     * @return 設備一覧画面へのリダイレクト
+     */
     @PostMapping("/delete-multiple")
     public String deleteMultipleEquipment(@RequestParam(value = "selectedIds", required = false) List<Integer> selectedIds) {
         if (selectedIds != null && !selectedIds.isEmpty()) {

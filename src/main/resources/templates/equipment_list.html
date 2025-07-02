@@ -1,15 +1,27 @@
 <!DOCTYPE html>
+<!-- 
+設備一覧表示画面のHTMLテンプレート
+このテンプレートは設備管理システムのメイン画面で、登録されている全設備の一覧を表示します。
+主な機能：
+- 設備の基本情報表示
+- 減価償却計算結果の表示
+- 設備の状態による行の色分け
+- 新規登録・一括削除への遷移
+- 個別編集機能
+-->
 <html xmlns:th="http://www.thymeleaf.org">
 
 <head>
     <meta charset="UTF-8" />
     <title>設備一覧</title>
     <style>
+        /* テーブルの基本スタイル */
         table {
             border-collapse: collapse;
             width: 100%;
         }
 
+        /* テーブルのセルスタイル */
         th,
         td {
             border: 1px solid #999;
@@ -17,22 +29,25 @@
             text-align: left;
         }
 
+        /* テーブルヘッダーのスタイル */
         th {
             background-color: #eee;
         }
 
+        /* アクションボタンのコンテナ */
         .action-buttons form {
             display: inline-block;
             margin: 0 4px;
         }
 
+        /* 〇マーク（貸出可能・使用不能フラグ）のスタイル */
         .circle {
             font-weight: bold;
             color: green;
             text-align: center;
         }
 
-        /* 上部ボタン用 */
+        /* 上部ボタン用のコンテナスタイル */
         .top-buttons {
             text-align: right;
             margin: 10px 0;
@@ -52,7 +67,7 @@
             transition: background-color 0.2s;
         }
 
-        /* 新規登録ボタン */
+        /* 新規登録ボタンのスタイル（緑色） */
         .register-button {
             background-color: #4CAF50;
             color: white;
@@ -62,7 +77,7 @@
             background-color: #45a049;
         }
 
-        /* 削除モードボタン */
+        /* 削除モードボタンのスタイル（赤色） */
         .delete-mode-button {
             background-color: #f44336;
             color: white;
@@ -72,12 +87,12 @@
             background-color: #da190b;
         }
 
-        /* 減価償却完了の行のスタイル */
+        /* 減価償却完了設備の行スタイル（青系背景） */
         .depreciation-completed {
             background-color: #e3f2fd !important;
         }
 
-        /* 廃棄済み設備の行のスタイル */
+        /* 廃棄済み設備の行スタイル（グレーアウト） */
         .disposed-equipment {
             background-color: #f5f5f5 !important;
             color: #888 !important;
@@ -89,7 +104,7 @@
             color: #888 !important;
         }
 
-        /* 破損設備の行のスタイル */
+        /* 破損設備の行スタイル（グレーアウト） */
         .broken-equipment {
             background-color: #f5f5f5 !important;
             color: #888 !important;
@@ -101,7 +116,7 @@
             color: #888 !important;
         }
 
-        /* 減価償却完了セルの特別スタイル */
+        /* 減価償却完了セルの特別スタイル（強調表示） */
         .depreciation-completed-cell {
             background-color: #2196f3 !important;
             color: white !important;
@@ -120,20 +135,26 @@
 </head>
 
 <body>
+    <!-- ページタイトル -->
     <h1>設備一覧</h1>
 
+    <!-- 上部操作ボタン群 -->
     <div class="top-buttons">
+        <!-- 新規登録ボタン -->
         <a th:href="@{/equipment/create-form}">
             <button type="button" class="action-button register-button">(＋) 新規登録</button>
         </a>
+        <!-- 一括削除ボタン -->
         <a th:href="@{/equipment/delete-mode}">
             <button type="button" class="action-button delete-mode-button">(－) 一括削除</button>
         </a>
     </div>
 
+    <!-- 設備一覧テーブル -->
     <table>
         <thead>
             <tr>
+                <!-- テーブルヘッダー定義 -->
                 <th>管理番号</th>
                 <th>品名</th>
                 <th>型番</th>
@@ -150,19 +171,37 @@
             </tr>
         </thead>
         <tbody>
+            <!-- 
+            設備一覧のデータ表示
+            各設備の状態に応じて行のCSSクラスを動的に設定：
+            - disposed-equipment: 廃棄済み設備
+            - broken-equipment: 故障設備  
+            - depreciation-completed: 減価償却完了設備
+            -->
             <tr th:each="equipment : ${equipments}"
                 th:class="${equipment.isDisposed ? 'disposed-equipment' : 
                            equipment.isBroken ? 'broken-equipment' : 
                            (equipment.elapsedYears != null and equipment.lifespanYears != null and equipment.elapsedYears >= equipment.lifespanYears) ? 'depreciation-completed' : ''}">
                 
+                <!-- 管理番号 -->
                 <td th:text="${equipment.managementNumber}"></td>
+                <!-- 設備名 -->
                 <td th:text="${equipment.name}"></td>
+                <!-- 型番 -->
                 <td th:text="${equipment.modelNumber}"></td>
+                <!-- メーカー -->
                 <td th:text="${equipment.manufacturer}"></td>
+                <!-- 仕様 -->
                 <td th:text="${equipment.specification}"></td>
+                <!-- 購入日 -->
                 <td th:text="${equipment.purchaseDate}"></td>
+                <!-- 耐用年数 -->
                 <td th:text="${equipment.lifespanYears}"></td>
                 
+                <!-- 
+                減価償却状況の表示
+                減価償却完了の場合は特別なスタイルを適用
+                -->
                 <td th:class="${equipment.elapsedYears != null and equipment.lifespanYears != null and equipment.elapsedYears >= equipment.lifespanYears ? 'depreciation-completed-cell' : ''}">
                     <span th:if="${equipment.elapsedYears != null and equipment.lifespanYears != null}">
                         <span th:text="${equipment.elapsedYears >= equipment.lifespanYears ? '完了' : 
@@ -171,8 +210,15 @@
                     <span th:if="${equipment.elapsedYears == null or equipment.lifespanYears == null}">-</span>
                 </td>
                 
+                <!-- 使用不能フラグ（故障状態）〇マーク表示 -->
                 <td class="circle" th:text="${equipment.isBroken} ? '〇' : ''"></td>
+                <!-- 貸出可能フラグ 〇マーク表示 -->
                 <td class="circle" th:text="${equipment.isAvailableForLoan} ? '〇' : ''"></td>
+                
+                <!-- 
+                設置場所の表示
+                コードから日本語表示名に変換
+                -->
                 <td>
                     <span th:switch="${equipment.locationCode}">
                         <span th:case="'TOKYO'">東京本店</span>
@@ -184,7 +230,11 @@
                         <span th:case="*">不明</span>
                     </span>
                 </td>
+                
+                <!-- 使用期限（設定されている場合のみ表示） -->
                 <td th:text="${equipment.usageDeadline != null} ? '〜' + ${#dates.format(equipment.usageDeadline, 'yyyy/MM/dd')} : ''"></td>
+                
+                <!-- 操作ボタン（編集） -->
                 <td class="action-buttons">
                     <form th:action="@{/equipment/edit}" method="get" style="display: inline;">
                         <input type="hidden" name="id" th:value="${equipment.id}" />
