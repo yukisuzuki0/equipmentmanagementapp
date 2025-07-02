@@ -32,18 +32,19 @@
             text-align: center;
         }
 
-        /* 右上ボタン用 */
-        .top-right-button {
+        /* 上部ボタン用 */
+        .top-buttons {
             text-align: right;
             margin: 10px 0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
         }
 
-        /* 新規登録ボタンデザイン */
-        .register-button {
+        /* ボタンの共通スタイル */
+        .action-button {
             padding: 10px 20px;
             font-size: 16px;
-            background-color: #4CAF50;
-            color: white;
             border: none;
             border-radius: 6px;
             cursor: pointer;
@@ -51,13 +52,29 @@
             transition: background-color 0.2s;
         }
 
+        /* 新規登録ボタン */
+        .register-button {
+            background-color: #4CAF50;
+            color: white;
+        }
+
         .register-button:hover {
             background-color: #45a049;
         }
 
+        /* 削除モードボタン */
+        .delete-mode-button {
+            background-color: #f44336;
+            color: white;
+        }
+
+        .delete-mode-button:hover {
+            background-color: #da190b;
+        }
+
         /* 減価償却完了の行のスタイル */
         .depreciation-completed {
-            background-color: #e3f2fd !important; /* 薄い青色 */
+            background-color: #e3f2fd !important;
         }
 
         /* 廃棄済み設備の行のスタイル */
@@ -86,7 +103,7 @@
 
         /* 減価償却完了セルの特別スタイル */
         .depreciation-completed-cell {
-            background-color: #2196f3 !important; /* 濃い青色 */
+            background-color: #2196f3 !important;
             color: white !important;
             font-weight: bold;
             text-align: center;
@@ -105,9 +122,12 @@
 <body>
     <h1>設備一覧</h1>
 
-    <div class="top-right-button">
+    <div class="top-buttons">
         <a th:href="@{/equipment/create-form}">
-            <button type="button" class="register-button">＋ 新規登録</button>
+            <button type="button" class="action-button register-button">＋ 新規登録</button>
+        </a>
+        <a th:href="@{/equipment/delete-mode}">
+            <button type="button" class="action-button delete-mode-button">一括削除</button>
         </a>
     </div>
 
@@ -143,7 +163,6 @@
                 <td th:text="${equipment.purchaseDate}"></td>
                 <td th:text="${equipment.lifespanYears}"></td>
                 
-                <!-- 減価償却状況セル -->
                 <td th:class="${equipment.elapsedYears != null and equipment.lifespanYears != null and equipment.elapsedYears >= equipment.lifespanYears ? 'depreciation-completed-cell' : ''}">
                     <span th:if="${equipment.elapsedYears != null and equipment.lifespanYears != null}">
                         <span th:text="${equipment.elapsedYears >= equipment.lifespanYears ? '完了' : 
@@ -154,8 +173,6 @@
                 
                 <td class="circle" th:text="${equipment.isBroken} ? '〇' : ''"></td>
                 <td class="circle" th:text="${equipment.isAvailableForLoan} ? '〇' : ''"></td>
-                
-                <!-- 設置場所 -->
                 <td>
                     <span th:switch="${equipment.locationCode}">
                         <span th:case="'TOKYO'">東京本店</span>
@@ -167,19 +184,11 @@
                         <span th:case="*">不明</span>
                     </span>
                 </td>
-                
-                <!-- 使用期限 -->
                 <td th:text="${equipment.usageDeadline != null} ? '〜' + ${#dates.format(equipment.usageDeadline, 'yyyy/MM/dd')} : ''"></td>
-                
-                <!-- 操作ボタン -->
                 <td class="action-buttons">
-                    <form th:action="@{/equipment/edit}" method="get">
+                    <form th:action="@{/equipment/edit}" method="get" style="display: inline;">
                         <input type="hidden" name="id" th:value="${equipment.id}" />
                         <button type="submit">編集</button>
-                    </form>
-                    <form th:action="@{/equipment/delete}" method="post" onsubmit="return confirm('削除してもよろしいですか？');">
-                        <input type="hidden" name="id" th:value="${equipment.id}" />
-                        <button type="submit" style="color: red;">削除</button>
                     </form>
                 </td>
             </tr>

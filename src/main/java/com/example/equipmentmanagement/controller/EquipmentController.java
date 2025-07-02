@@ -272,4 +272,72 @@ public class EquipmentController {
 
         return prefix + String.format("%04d", nextNumber);
     }
+
+    // 削除モード画面表示
+    @GetMapping("/delete-mode")
+    public String showDeleteMode(Model model) {
+        List<Equipment> equipments = equipmentRepository.findAll();
+
+        List<EquipmentDto> equipmentDtoList = equipments.stream().map(e -> {
+            EquipmentDto dto = new EquipmentDto();
+            dto.setId(e.getId());
+            dto.setManagementNumber(e.getManagementNumber());
+            dto.setCategoryCode(e.getCategoryCode());
+            dto.setItemCode(e.getItemCode());
+            dto.setName(e.getName());
+            dto.setModelNumber(e.getModelNumber());
+            dto.setManufacturer(e.getManufacturer());
+            dto.setSpecification(e.getSpecification());
+            dto.setCost(e.getCost());
+            dto.setPurchaseDate(e.getPurchaseDate());
+            dto.setQuantity(e.getQuantity());
+            dto.setLocationCode(e.getLocationCode());
+            dto.setIsDisposed(e.getIsDisposed());
+            dto.setIsBroken(e.getIsBroken());
+            dto.setIsAvailableForLoan(e.getIsAvailableForLoan());
+            dto.setUsageDeadline(e.getUsageDeadline());
+
+            dto.setLocationLabel(convertLocationCodeToLabel(e.getLocationCode()));
+
+            int lifespan = depreciationService.getLifespanYears(e);
+            dto.setLifespanYears(lifespan);
+
+            if (e.getPurchaseDate() != null && lifespan > 0) {
+                int elapsed = Math.min(java.time.Period.between(e.getPurchaseDate(), LocalDate.now()).getYears(),
+                        lifespan);
+                dto.setElapsedYears(elapsed);
+
+                if (elapsed > lifespan) {
+                    dto.setDepreciationStatus("終了");
+                    dto.setAnnualDepreciation(0.0);
+                    dto.setBookValue(0.0);
+                } else {
+                    double annualDep = depreciationService.calculateAnnualDepreciation(e);
+                    dto.setAnnualDepreciation(annualDep);
+                    double bookValue = depreciationService.calculateBookValue(e, LocalDate.now());
+                    dto.setBookValue(bookValue);
+                    dto.setDepreciationStatus(String.format("%.2f", annualDep));
+                }
+            } else {
+                dto.setElapsedYears(0);
+                dto.setAnnualDepreciation(0.0);
+                dto.setBookValue(dto.getCost());
+                dto.setDepreciationStatus("-");
+            }
+
+            return dto;
+        }).collect(Collectors.toList());
+
+        model.addAttribute("equipments", equipmentDtoList);
+        return "equipment_delete";
+    }
+
+    // 複数削除処理
+    @PostMapping("/delete-multiple")
+    public String deleteMultipleEquipment(@RequestParam(value = "selectedIds", required = false) List<Integer> selectedIds) {
+        if (selectedIds != null && !selectedIds.isEmpty()) {
+            equipmentRepository.deleteAllById(selectedIds);
+        }
+        return "redirect:/equipment/list";
+    }
 }
