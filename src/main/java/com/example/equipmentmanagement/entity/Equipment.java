@@ -33,7 +33,7 @@ public class Equipment {
     private Integer id;
 
     /** 管理番号（ユニーク制約あり、例：EQ2024-0001） */
-    @Column(name = "management_number", nullable = false, unique = true)
+    @Column(name = "management_number", nullable = false, unique = true) /**←-------------------------------ここ */
     private String managementNumber;
 
     /** メインカテゴリーコード（設備の大分類） */

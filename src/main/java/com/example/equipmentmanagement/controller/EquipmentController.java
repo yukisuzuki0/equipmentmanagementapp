@@ -46,9 +46,9 @@ public class EquipmentController {
     @Autowired
     private EquipmentRepository equipmentRepository;
 
-    /** 設備寿命リポジトリ */
+    /** 設備寿命リポジトリ 
     @Autowired
-    private EquipmentLifespanRepository equipmentLifespanRepository;
+    private EquipmentLifespanRepository equipmentLifespanRepository;*/
 
     /** 設置場所リポジトリ */
     @Autowired
@@ -66,9 +66,9 @@ public class EquipmentController {
     @Autowired
     private SubcategoryRepository subcategoryRepository;
     
-    /** 耐用年数リポジトリ */
+    /** 耐用年数リポジトリ 
     @Autowired
-    private UsefulLifeRepository usefulLifeRepository;
+    private UsefulLifeRepository usefulLifeRepository;*/
 
     /**
      * ルートパスへのアクセスを検索画面にリダイレクト
@@ -317,7 +317,7 @@ public class EquipmentController {
         }
 
         // 管理番号を自動生成
-        equipment.setManagementNumber(generateNextManagementNumber());
+        equipment.setManagementNumber(generateNextManagementNumber());/**←-------------------------------ここ */
         equipmentRepository.save(equipment);
 
         return "redirect:/equipment/list";
@@ -524,7 +524,7 @@ public class EquipmentController {
      * 
      * @return 生成された管理番号
      */
-    private String generateNextManagementNumber() {
+    private String generateNextManagementNumber() {/**←-------------------------------ここ */
         int year = Year.now().getValue();
         String prefix = "EQ" + year + "-";
 

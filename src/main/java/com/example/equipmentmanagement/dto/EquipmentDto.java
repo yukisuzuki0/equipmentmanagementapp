@@ -24,7 +24,7 @@ public class EquipmentDto {
     /** 設備ID */
     private Integer id;
     /** 管理番号 */
-    private String managementNumber;
+    private String managementNumber;/**←-------------------------------ここ */
     /** メインカテゴリーコード */
     private String categoryCode;
     /** サブカテゴリーコード */
