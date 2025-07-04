@@ -5,9 +5,24 @@
     <meta charset="UTF-8" />
     <title>設備削除</title>
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #f44336;
+            padding-bottom: 10px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
         table {
             border-collapse: collapse;
             width: 100%;
+            margin-bottom: 30px;
         }
 
         th,
@@ -25,6 +40,29 @@
             font-weight: bold;
             color: green;
             text-align: center;
+        }
+
+        /* 削除確認モーダル */
+        .confirmation-modal {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            max-width: 90%;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .confirmation-title {
+            color: #f44336;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .confirmation-message {
+            font-size: 18px;
+            margin-bottom: 30px;
+            color: #555;
         }
 
         /* 上部ボタン用 */
@@ -69,21 +107,11 @@
 
         /* 固定フッター */
         .fixed-footer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background-color: white;
+            margin-top: 30px;
             padding: 15px;
-            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
             display: flex;
             justify-content: center;
             gap: 20px;
-        }
-
-        /* テーブルの下部にパディングを追加してフッターと重ならないようにする */
-        .table-container {
-            padding-bottom: 80px;
         }
 
         /* チェックボックスのスタイル */
@@ -102,18 +130,6 @@
         /* 減価償却完了の行のスタイル */
         .depreciation-completed {
             background-color: #e3f2fd !important;
-        }
-
-        /* 廃棄済み設備の行のスタイル */
-        .disposed-equipment {
-            background-color: #f5f5f5 !important;
-            color: #888 !important;
-            opacity: 0.7;
-        }
-
-        .disposed-equipment td {
-            background-color: #f5f5f5 !important;
-            color: #888 !important;
         }
 
         /* 破損設備の行のスタイル */
@@ -137,10 +153,31 @@
         }
 
         /* グレーアウト時でも〇マークは見やすく */
-        .disposed-equipment .circle,
         .broken-equipment .circle {
             color: #666 !important;
             font-weight: bold;
+        }
+
+        /* 確認画面用のスタイル */
+        .confirmation-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .confirmation-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 90%;
+            margin: 50px auto;
         }
     </style>
 </head>
@@ -154,6 +191,8 @@
                 <thead>
                     <tr>
                         <th>管理番号</th>
+                        <th>メインカテゴリー</th>
+                        <th>サブカテゴリー</th>
                         <th>品名</th>
                         <th>型番</th>
                         <th>メーカー</th>
@@ -170,11 +209,12 @@
                 </thead>
                 <tbody>
                     <tr th:each="equipment : ${equipments}"
-                        th:class="${equipment.isDisposed ? 'disposed-equipment' : 
-                                equipment.isBroken ? 'broken-equipment' : 
+                        th:class="${equipment.isBroken ? 'broken-equipment' : 
                                 (equipment.elapsedYears != null and equipment.lifespanYears != null and equipment.elapsedYears >= equipment.lifespanYears) ? 'depreciation-completed' : ''}">
                         
                         <td th:text="${equipment.managementNumber}"></td>
+                        <td th:text="${equipment.categoryCode}"></td>
+                        <td th:text="${equipment.itemCode}"></td>
                         <td th:text="${equipment.name}"></td>
                         <td th:text="${equipment.modelNumber}"></td>
                         <td th:text="${equipment.manufacturer}"></td>
@@ -216,18 +256,119 @@
             <a th:href="@{/equipment/list}">
                 <button type="button" class="action-button cancel-button">キャンセル</button>
             </a>
-            <button type="submit" class="action-button execute-delete-button" onclick="return confirmDelete()">削除実行</button>
+            <button type="button" class="action-button execute-delete-button" onclick="showDeleteConfirmation()">削除確認</button>
+        </div>
+
+        <!-- 削除確認モーダル -->
+        <div id="confirmationModal" class="confirmation-container">
+            <div class="confirmation-content">
+                <h2 class="confirmation-title">削除確認</h2>
+                <p class="confirmation-message">以下の設備を削除してもよろしいですか？</p>
+                
+                <div id="selectedItemsContainer">
+                    <table id="selectedItemsTable">
+                        <thead>
+                            <tr>
+                                <th>管理番号</th>
+                                <th>メインカテゴリー</th>
+                                <th>サブカテゴリー</th>
+                                <th>品名</th>
+                                <th>設置場所</th>
+                                <th>キャンセル</th>
+                            </tr>
+                        </thead>
+                        <tbody id="selectedItemsBody">
+                            <!-- JavaScriptで動的に生成 -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="fixed-footer">
+                    <button type="button" class="action-button cancel-button" onclick="hideDeleteConfirmation()">キャンセル</button>
+                    <button type="submit" class="action-button execute-delete-button">削除実行</button>
+                </div>
+            </div>
         </div>
     </form>
 
     <script>
-        function confirmDelete() {
-            const selectedCount = document.querySelectorAll('input[name="selectedIds"]:checked').length;
-            if (selectedCount === 0) {
+        function showDeleteConfirmation() {
+            const selectedCheckboxes = document.querySelectorAll('input[name="selectedIds"]:checked');
+            if (selectedCheckboxes.length === 0) {
                 alert('削除する設備を選択してください。');
-                return false;
+                return;
             }
-            return confirm('選択した' + selectedCount + '件の設備を削除してもよろしいですか？');
+            
+            // 選択された設備のテーブル行を取得
+            const selectedRows = [];
+            selectedCheckboxes.forEach(function(checkbox) {
+                const row = checkbox.closest('tr');
+                selectedRows.push({
+                    id: checkbox.value,
+                    managementNumber: row.cells[0].textContent.trim(),
+                    categoryCode: row.cells[1].textContent.trim(),
+                    itemCode: row.cells[2].textContent.trim(),
+                    name: row.cells[3].textContent.trim(),
+                    location: row.cells[12].textContent.trim()
+                });
+            });
+            
+            // 確認テーブルを生成
+            const selectedItemsBody = document.getElementById('selectedItemsBody');
+            selectedItemsBody.innerHTML = '';
+            
+            selectedRows.forEach(function(item) {
+                const row = document.createElement('tr');
+                
+                const managementNumberCell = document.createElement('td');
+                managementNumberCell.textContent = item.managementNumber;
+                row.appendChild(managementNumberCell);
+                
+                const categoryCodeCell = document.createElement('td');
+                categoryCodeCell.textContent = item.categoryCode;
+                row.appendChild(categoryCodeCell);
+                
+                const itemCodeCell = document.createElement('td');
+                itemCodeCell.textContent = item.itemCode;
+                row.appendChild(itemCodeCell);
+                
+                const nameCell = document.createElement('td');
+                nameCell.textContent = item.name;
+                row.appendChild(nameCell);
+                
+                const locationCell = document.createElement('td');
+                locationCell.textContent = item.location;
+                row.appendChild(locationCell);
+                
+                const cancelCell = document.createElement('td');
+                const cancelCheckbox = document.createElement('input');
+                cancelCheckbox.type = 'checkbox';
+                cancelCheckbox.value = item.id;
+                cancelCheckbox.checked = true;
+                cancelCheckbox.addEventListener('change', function() {
+                    // 元のチェックボックスの状態を連動させる
+                    const originalCheckbox = document.querySelector(`input[name="selectedIds"][value="${item.id}"]`);
+                    if (originalCheckbox) {
+                        originalCheckbox.checked = this.checked;
+                    }
+                    
+                    // チェックを外した行を削除
+                    if (!this.checked) {
+                        row.remove();
+                    }
+                });
+                cancelCell.appendChild(cancelCheckbox);
+                row.appendChild(cancelCell);
+                
+                selectedItemsBody.appendChild(row);
+            });
+            
+            // 確認モーダルを表示
+            document.getElementById('confirmationModal').style.display = 'block';
+        }
+        
+        function hideDeleteConfirmation() {
+            document.getElementById('confirmationModal').style.display = 'none';
         }
     </script>
 </body>

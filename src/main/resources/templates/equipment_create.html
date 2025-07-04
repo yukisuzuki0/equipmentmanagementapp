@@ -155,7 +155,7 @@
         <form th:action="@{/equipment/create}" method="post" th:object="${equipmentForm}">
             <table>
                 <tr>
-                    <th>カテゴリ <span class="required">*</span></th>
+                    <th>メインカテゴリー <span class="required">*</span></th>
                     <td>
                         <select id="categorySelect" th:field="*{categoryCode}" required>
                             <option value="" disabled th:selected="${equipmentForm.categoryCode == null}">選択してください</option>
@@ -165,15 +165,16 @@
                     </td>
                 </tr>
                 <tr>
-                    <th>品目 <span class="required">*</span></th>
+                    <th>サブカテゴリー <span class="required">*</span></th>
                     <td>
                         <select id="itemSelect" th:field="*{itemCode}" required>
                             <option value="" disabled th:selected="${equipmentForm.itemCode == null}">選択してください</option>
                         </select>
+                        <input type="hidden" id="subcategoryId" th:field="*{subcategoryId}" />
                     </td>
                 </tr>
                 <tr>
-                    <th>名前 <span class="required">*</span></th>
+                    <th>品名 <span class="required">*</span></th>
                     <td><input type="text" th:field="*{name}" required /></td>
                 </tr>
                 <tr>
@@ -215,12 +216,7 @@
                         <select th:field="*{locationCode}" required>
                             <option value="" disabled th:selected="${equipmentForm.locationCode == null}">選択してください</option>
                             <option th:each="loc : ${locationOptions}" th:value="${loc}"
-                                    th:text="${loc == 'TOKYO' ? '東京本店' :
-                                              loc == 'SENDAI' ? '仙台支店' :
-                                              loc == 'NIIGATA' ? '新潟支店' :
-                                              loc == 'YOKOHAMA' ? '横浜支店' :
-                                              loc == 'OSAKA' ? '大阪支店' :
-                                              loc == 'SAITAMA' ? '埼玉支店' : '不明'}"></option>
+                                    th:text="${@locationRepository.findById(T(java.lang.Integer).parseInt(loc)).orElse(new com.example.equipmentmanagement.entity.Location()).getName()}"></option>
                         </select>
                     </td>
                 </tr>
@@ -255,15 +251,6 @@
                         </div>
                     </td>
                 </tr>
-                <tr>
-                    <th>廃棄済み</th>
-                    <td>
-                        <div class="checkbox-container">
-                            <input type="checkbox" th:field="*{isDisposed}" />
-                            <label>廃棄済みです</label>
-                        </div>
-                    </td>
-                </tr>
             </table>
 
             <div class="button-container">
@@ -280,37 +267,44 @@
 
         const categorySelect = document.getElementById('categorySelect');
         const itemSelect = document.getElementById('itemSelect');
+        const subcategoryIdField = document.getElementById('subcategoryId');
 
-        // カテゴリ変更時に品目コードを動的取得
+        // カテゴリ変更時にサブカテゴリーを動的取得
         async function updateItemOptions() {
             const selectedCat = categorySelect.value;
             
-            // 品目選択をクリア
-            itemSelect.innerHTML = '<option value="" disabled>選択してください</option>';
+            // サブカテゴリー選択をクリア
+            itemSelect.innerHTML = '<option value="" disabled selected>選択してください</option>';
+            subcategoryIdField.value = '';
             
             if (!selectedCat) return;
             
             try {
-                const response = await fetch(`/equipment/api/items/${selectedCat}`);
-                const items = await response.json();
+                const response = await fetch(`/equipment/api/subcategories/${selectedCat}`);
+                const subcategories = await response.json();
                 
-                items.forEach(item => {
+                subcategories.forEach(subcategory => {
                     const option = document.createElement('option');
-                    option.value = item.code;
-                    option.text = item.label;
-                    if (selectedItem === item.code) {
+                    option.value = subcategory.id;
+                    option.text = subcategory.name;
+                    if (selectedItem === subcategory.id) {
                         option.selected = true;
                     }
                     itemSelect.appendChild(option);
                 });
             } catch (error) {
-                console.error('品目コード取得エラー:', error);
+                console.error('サブカテゴリー取得エラー:', error);
             }
         }
 
         categorySelect.addEventListener('change', updateItemOptions);
+        
+        // サブカテゴリー選択時にsubcategoryIdフィールドに値をセット
+        itemSelect.addEventListener('change', function() {
+            subcategoryIdField.value = this.value;
+        });
 
-        // ページロード時にカテゴリ選択と品目コード選択を復元
+        // ページロード時にカテゴリ選択とサブカテゴリー選択を復元
         window.addEventListener('load', () => {
             if (selectedCategory) {
                 categorySelect.value = selectedCategory;
