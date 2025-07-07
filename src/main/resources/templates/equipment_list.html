@@ -153,7 +153,7 @@
             padding: 10px;
             border-radius: 6px;
             z-index: 100;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
             display: none;
             max-width: 300px;
             text-align: center;
@@ -203,6 +203,11 @@
         .no-results h3 {
             color: #c62828;
         }
+
+        /* 改行を維持するスタイル */
+        .preserve-linebreaks {
+            white-space: pre-line;
+        }
     </style>
 
 </head>
@@ -212,18 +217,21 @@
     <h1>設備一覧</h1>
 
     <!-- 検索結果表示（検索パラメータがある場合のみ表示） -->
-    <div th:if="${searchType != null}" class="search-result-info" th:classappend="${equipments.isEmpty() ? 'no-results' : ''}">
+    <div th:if="${searchType != null}" class="search-result-info"
+        th:classappend="${equipments.isEmpty() ? 'no-results' : ''}">
         <h3 th:if="${!equipments.isEmpty()}">検索結果</h3>
         <h3 th:if="${equipments.isEmpty()}">検索結果がありません</h3>
         <p th:if="${searchType == 'location' && searchLocation != null && !searchLocation.isEmpty()}">
-            設置場所: <span th:text="${@locationRepository.findById(T(java.lang.Integer).parseInt(searchLocation)).orElse(new com.example.equipmentmanagement.entity.Location()).getName()}"></span>
+            設置場所: <span
+                th:text="${@locationRepository.findById(T(java.lang.Integer).parseInt(searchLocation)).orElse(new com.example.equipmentmanagement.entity.Location()).getName()}"></span>
         </p>
         <p th:if="${searchType == 'name' && searchName != null && !searchName.isEmpty()}">
             品名に "<span th:text="${searchName}"></span>" を含む
         </p>
         <p th:if="${searchType == 'both'}">
             <span th:if="${searchLocation != null && !searchLocation.isEmpty()}">
-                設置場所: <span th:text="${@locationRepository.findById(T(java.lang.Integer).parseInt(searchLocation)).orElse(new com.example.equipmentmanagement.entity.Location()).getName()}"></span>
+                設置場所: <span
+                    th:text="${@locationRepository.findById(T(java.lang.Integer).parseInt(searchLocation)).orElse(new com.example.equipmentmanagement.entity.Location()).getName()}"></span>
             </span>
             <span th:if="${searchName != null && !searchName.isEmpty()}">
                 <span th:if="${searchLocation != null && !searchLocation.isEmpty()}"> かつ </span>
@@ -244,7 +252,8 @@
             <button type="button" class="action-button register-button">(＋) 新規登録</button>
         </a>
         <!-- 編集ボタン -->
-        <button type="button" id="editButton" class="action-button edit-button" onclick="editSelectedEquipment()">編集</button>
+        <button type="button" id="editButton" class="action-button edit-button"
+            onclick="editSelectedEquipment()">編集</button>
         <!-- 一括削除ボタン -->
         <a th:href="@{/equipment/delete-mode}">
             <button type="button" class="action-button delete-mode-button">(－) 一括削除</button>
@@ -286,10 +295,11 @@
             <tr th:each="equipment : ${equipments}"
                 th:class="${equipment.isBroken ? 'broken-equipment' : 
                            (equipment.elapsedYears != null and equipment.lifespanYears != null and equipment.elapsedYears >= equipment.lifespanYears) ? 'depreciation-completed' : ''}">
-                
+
                 <!-- ラジオボタン -->
                 <td>
-                    <input type="radio" name="selectedEquipment" th:value="${equipment.id}" class="radio-select" onclick="toggleRadioSelection(this)">
+                    <input type="radio" name="selectedEquipment" th:value="${equipment.id}" class="radio-select"
+                        onclick="toggleRadioSelection(this)">
                 </td>
                 <!-- 管理番号 -->
                 <td th:text="${equipment.managementNumber}"></td>
@@ -300,42 +310,45 @@
                 <!-- メーカー -->
                 <td th:text="${equipment.manufacturer}"></td>
                 <!-- 仕様 -->
-                <td th:text="${equipment.specification}"></td>
+                <td class="preserve-linebreaks" th:text="${equipment.specification ?: '-'}"></td>
                 <!-- 購入日 -->
                 <td th:text="${equipment.purchaseDate}"></td>
                 <!-- 耐用年数 -->
                 <td th:text="${equipment.lifespanYears}"></td>
-                
+
                 <!-- 
-                減価償却状況の表示
+               減価償却状況の表示
                 減価償却完了の場合は特別なスタイルを適用
                 -->
-                <td th:class="${equipment.elapsedYears != null and equipment.lifespanYears != null and equipment.elapsedYears >= equipment.lifespanYears ? 'depreciation-completed-cell' : ''}">
+                <td
+                    th:class="${equipment.elapsedYears != null and equipment.lifespanYears != null and equipment.elapsedYears >= equipment.lifespanYears ? 'depreciation-completed-cell' : ''}">
                     <span th:if="${equipment.elapsedYears != null and equipment.lifespanYears != null}">
-                        <span th:text="${equipment.elapsedYears >= equipment.lifespanYears ? '完了' : 
-                                       equipment.annualDepreciation != null ? #numbers.formatDecimal(equipment.annualDepreciation, 1, 'COMMA', 2, 'POINT') : '-'}"></span>
+                        <span th:text="${equipment.elapsedYears >= equipment.lifespanYears ? '終了' : ''}"></span>
                     </span>
                     <span th:if="${equipment.elapsedYears == null or equipment.lifespanYears == null}">-</span>
                 </td>
-                
+
                 <!-- 使用不能フラグ（故障状態）〇マーク表示 -->
                 <td class="circle" th:text="${equipment.isBroken} ? '〇' : ''"></td>
                 <!-- 貸出可能フラグ 〇マーク表示 -->
                 <td class="circle" th:text="${equipment.isAvailableForLoan} ? '〇' : ''"></td>
-                
+
                 <!-- 
                 設置場所の表示
                 コードから日本語表示名に変換
                 -->
                 <td>
                     <span th:if="${equipment.locationCode != null}">
-                        <span th:text="${@locationRepository.findById(T(java.lang.Integer).parseInt(equipment.locationCode)).orElse(new com.example.equipmentmanagement.entity.Location()).getName()}"></span>
+                        <span
+                            th:text="${@locationRepository.findById(T(java.lang.Integer).parseInt(equipment.locationCode)).orElse(new com.example.equipmentmanagement.entity.Location()).getName()}"></span>
                     </span>
                     <span th:if="${equipment.locationCode == null}">不明</span>
                 </td>
-                
+
                 <!-- 使用期限（設定されている場合のみ表示） -->
-                <td th:text="${equipment.usageDeadline != null} ? '〜' + ${#dates.format(equipment.usageDeadline, 'yyyy/MM/dd')} : ''"></td>
+                <td
+                    th:text="${equipment.usageDeadline != null} ? '〜' + ${#dates.format(equipment.usageDeadline, 'yyyy/MM/dd')} : ''">
+                </td>
             </tr>
         </tbody>
     </table>
@@ -355,7 +368,7 @@
                 radio.removeAttribute('data-was-checked');
             } else {
                 // 他のラジオボタンからdata-was-checked属性を削除
-                document.querySelectorAll('input[name="selectedEquipment"]').forEach(function(r) {
+                document.querySelectorAll('input[name="selectedEquipment"]').forEach(function (r) {
                     r.removeAttribute('data-was-checked');
                 });
                 // 選択したラジオボタンにdata-was-checked属性を追加
@@ -366,7 +379,7 @@
         // 編集ボタンがクリックされたときの処理
         function editSelectedEquipment() {
             const selectedRadio = document.querySelector('input[name="selectedEquipment"]:checked');
-            
+
             if (selectedRadio) {
                 // 選択された設備のIDを取得して編集画面に遷移
                 const equipmentId = selectedRadio.value;
@@ -375,9 +388,9 @@
                 // 何も選択されていない場合はエラーメッセージを表示
                 const errorTooltip = document.getElementById('errorTooltip');
                 errorTooltip.style.display = 'block';
-                
+
                 // 3秒後にエラーメッセージを非表示にする
-                setTimeout(function() {
+                setTimeout(function () {
                     errorTooltip.style.display = 'none';
                 }, 3000);
             }

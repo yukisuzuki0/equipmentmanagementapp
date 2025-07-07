@@ -107,11 +107,22 @@
 
         /* 固定フッター */
         .fixed-footer {
-            margin-top: 30px;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: white;
             padding: 15px;
             display: flex;
             justify-content: center;
             gap: 20px;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+        }
+
+        /* テーブルコンテナに下部マージンを追加してボタンと重ならないように */
+        .table-container {
+            margin-bottom: 80px;
         }
 
         /* チェックボックスのスタイル */
@@ -158,6 +169,11 @@
             font-weight: bold;
         }
 
+        /* 改行を維持するスタイル */
+        .preserve-linebreaks {
+            white-space: pre-line;
+        }
+
         /* 確認画面用のスタイル */
         .confirmation-container {
             display: none;
@@ -191,8 +207,6 @@
                 <thead>
                     <tr>
                         <th>管理番号</th>
-                        <th>メインカテゴリー</th>
-                        <th>サブカテゴリー</th>
                         <th>品名</th>
                         <th>型番</th>
                         <th>メーカー</th>
@@ -213,35 +227,25 @@
                                 (equipment.elapsedYears != null and equipment.lifespanYears != null and equipment.elapsedYears >= equipment.lifespanYears) ? 'depreciation-completed' : ''}">
                         
                         <td th:text="${equipment.managementNumber}"></td>
-                        <td th:text="${equipment.categoryCode}"></td>
-                        <td th:text="${equipment.itemCode}"></td>
+
                         <td th:text="${equipment.name}"></td>
                         <td th:text="${equipment.modelNumber}"></td>
                         <td th:text="${equipment.manufacturer}"></td>
-                        <td th:text="${equipment.specification}"></td>
+                        <td class="preserve-linebreaks" th:text="${equipment.specification ?: '-'}"></td>
                         <td th:text="${equipment.purchaseDate}"></td>
                         <td th:text="${equipment.lifespanYears}"></td>
                         
                         <td th:class="${equipment.elapsedYears != null and equipment.lifespanYears != null and equipment.elapsedYears >= equipment.lifespanYears ? 'depreciation-completed-cell' : ''}">
-                            <span th:if="${equipment.elapsedYears != null and equipment.lifespanYears != null}">
-                                <span th:text="${equipment.elapsedYears >= equipment.lifespanYears ? '完了' : 
-                                            equipment.annualDepreciation != null ? #numbers.formatDecimal(equipment.annualDepreciation, 1, 'COMMA', 2, 'POINT') : '-'}"></span>
-                            </span>
-                            <span th:if="${equipment.elapsedYears == null or equipment.lifespanYears == null}">-</span>
+                            <span th:if="${equipment.elapsedYears != null and equipment.lifespanYears != null and equipment.elapsedYears >= equipment.lifespanYears}">終了</span>
                         </td>
                         
                         <td class="circle" th:text="${equipment.isBroken} ? '〇' : ''"></td>
                         <td class="circle" th:text="${equipment.isAvailableForLoan} ? '〇' : ''"></td>
                         <td>
-                            <span th:switch="${equipment.locationCode}">
-                                <span th:case="'TOKYO'">東京本店</span>
-                                <span th:case="'SENDAI'">仙台支店</span>
-                                <span th:case="'NIIGATA'">新潟支店</span>
-                                <span th:case="'YOKOHAMA'">横浜支店</span>
-                                <span th:case="'OSAKA'">大阪支店</span>
-                                <span th:case="'SAITAMA'">埼玉支店</span>
-                                <span th:case="*">不明</span>
+                            <span th:if="${equipment.locationCode != null}">
+                                <span th:text="${@locationRepository.findById(T(java.lang.Integer).parseInt(equipment.locationCode)).orElse(new com.example.equipmentmanagement.entity.Location()).getName()}"></span>
                             </span>
+                            <span th:if="${equipment.locationCode == null}">不明</span>
                         </td>
                         <td th:text="${equipment.usageDeadline != null} ? '〜' + ${#dates.format(equipment.usageDeadline, 'yyyy/MM/dd')} : ''"></td>
                         <td class="checkbox-cell">
@@ -270,10 +274,17 @@
                         <thead>
                             <tr>
                                 <th>管理番号</th>
-                                <th>メインカテゴリー</th>
-                                <th>サブカテゴリー</th>
                                 <th>品名</th>
+                                <th>型番</th>
+                                <th>メーカー</th>
+                                <th>仕様</th>
+                                <th>購入日</th>
+                                <th>耐用年数 (年)</th>
+                                <th>減価償却</th>
+                                <th>使用不能</th>
+                                <th>貸出可能</th>
                                 <th>設置場所</th>
+                                <th>使用期限</th>
                                 <th>キャンセル</th>
                             </tr>
                         </thead>
@@ -306,10 +317,17 @@
                 selectedRows.push({
                     id: checkbox.value,
                     managementNumber: row.cells[0].textContent.trim(),
-                    categoryCode: row.cells[1].textContent.trim(),
-                    itemCode: row.cells[2].textContent.trim(),
-                    name: row.cells[3].textContent.trim(),
-                    location: row.cells[12].textContent.trim()
+                    name: row.cells[1].textContent.trim(),
+                    modelNumber: row.cells[2].textContent.trim(),
+                    manufacturer: row.cells[3].textContent.trim(),
+                    specification: row.cells[4].textContent.trim(),
+                    purchaseDate: row.cells[5].textContent.trim(),
+                    lifespanYears: row.cells[6].textContent.trim(),
+                    depreciation: row.cells[7].textContent.trim(),
+                    isBroken: row.cells[8].textContent.trim(),
+                    isAvailableForLoan: row.cells[9].textContent.trim(),
+                    location: row.cells[10].textContent.trim(),
+                    usageDeadline: row.cells[11].textContent.trim()
                 });
             });
             
@@ -324,21 +342,50 @@
                 managementNumberCell.textContent = item.managementNumber;
                 row.appendChild(managementNumberCell);
                 
-                const categoryCodeCell = document.createElement('td');
-                categoryCodeCell.textContent = item.categoryCode;
-                row.appendChild(categoryCodeCell);
-                
-                const itemCodeCell = document.createElement('td');
-                itemCodeCell.textContent = item.itemCode;
-                row.appendChild(itemCodeCell);
-                
                 const nameCell = document.createElement('td');
                 nameCell.textContent = item.name;
                 row.appendChild(nameCell);
                 
+                const modelNumberCell = document.createElement('td');
+                modelNumberCell.textContent = item.modelNumber;
+                row.appendChild(modelNumberCell);
+                
+                const manufacturerCell = document.createElement('td');
+                manufacturerCell.textContent = item.manufacturer;
+                row.appendChild(manufacturerCell);
+                
+                const specificationCell = document.createElement('td');
+                specificationCell.textContent = item.specification;
+                specificationCell.className = 'preserve-linebreaks';
+                row.appendChild(specificationCell);
+                
+                const purchaseDateCell = document.createElement('td');
+                purchaseDateCell.textContent = item.purchaseDate;
+                row.appendChild(purchaseDateCell);
+                
+                const lifespanYearsCell = document.createElement('td');
+                lifespanYearsCell.textContent = item.lifespanYears;
+                row.appendChild(lifespanYearsCell);
+                
+                const depreciationCell = document.createElement('td');
+                depreciationCell.textContent = item.depreciation;
+                row.appendChild(depreciationCell);
+                
+                const isBrokenCell = document.createElement('td');
+                isBrokenCell.textContent = item.isBroken;
+                row.appendChild(isBrokenCell);
+                
+                const isAvailableForLoanCell = document.createElement('td');
+                isAvailableForLoanCell.textContent = item.isAvailableForLoan;
+                row.appendChild(isAvailableForLoanCell);
+                
                 const locationCell = document.createElement('td');
                 locationCell.textContent = item.location;
                 row.appendChild(locationCell);
+                
+                const usageDeadlineCell = document.createElement('td');
+                usageDeadlineCell.textContent = item.usageDeadline;
+                row.appendChild(usageDeadlineCell);
                 
                 const cancelCell = document.createElement('td');
                 const cancelCheckbox = document.createElement('input');

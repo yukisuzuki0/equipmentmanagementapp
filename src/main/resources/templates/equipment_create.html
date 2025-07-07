@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <meta charset="UTF-8" />
     <title>設備登録</title>
     <style>
+      
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -56,7 +58,8 @@
         input[type="text"], 
         input[type="number"], 
         input[type="date"], 
-        select {
+        select,
+        textarea {
             width: 100%;
             padding: 8px 12px;
             border: 1px solid #ddd;
@@ -65,10 +68,16 @@
             box-sizing: border-box;
         }
 
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
         input[type="text"]:focus, 
         input[type="number"]:focus, 
         input[type="date"]:focus, 
-        select:focus {
+        select:focus,
+        textarea:focus {
             outline: none;
             border-color: #4CAF50;
             box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
@@ -148,6 +157,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="form-container">
         <h1>新規設備登録</h1>
@@ -158,9 +168,10 @@
                     <th>メインカテゴリー <span class="required">*</span></th>
                     <td>
                         <select id="categorySelect" th:field="*{categoryCode}" required>
-                            <option value="" disabled th:selected="${equipmentForm.categoryCode == null}">選択してください</option>
-                            <option th:each="cat : ${categoryOptions}" th:value="${cat.code}"
-                                    th:text="${cat.label}"></option>
+                            <option value="" disabled th:selected="${equipmentForm.categoryCode == null}">選択してください
+                            </option>
+                            <option th:each="cat : ${categoryOptions}" th:value="${cat.code}" th:text="${cat.label}">
+                            </option>
                         </select>
                     </td>
                 </tr>
@@ -187,7 +198,7 @@
                 </tr>
                 <tr>
                     <th>仕様</th>
-                    <td><input type="text" th:field="*{specification}" /></td>
+                    <td><textarea th:field="*{specification}"></textarea></td>
                 </tr>
                 <tr>
                     <th>取得価格 <span class="required">*</span></th>
@@ -214,9 +225,11 @@
                     <th>設置場所 <span class="required">*</span></th>
                     <td>
                         <select th:field="*{locationCode}" required>
-                            <option value="" disabled th:selected="${equipmentForm.locationCode == null}">選択してください</option>
+                            <option value="" disabled th:selected="${equipmentForm.locationCode == null}">選択してください
+                            </option>
                             <option th:each="loc : ${locationOptions}" th:value="${loc}"
-                                    th:text="${@locationRepository.findById(T(java.lang.Integer).parseInt(loc)).orElse(new com.example.equipmentmanagement.entity.Location()).getName()}"></option>
+                                th:text="${@locationRepository.findById(T(java.lang.Integer).parseInt(loc)).orElse(new com.example.equipmentmanagement.entity.Location()).getName()}">
+                            </option>
                         </select>
                     </td>
                 </tr>
@@ -272,17 +285,17 @@
         // カテゴリ変更時にサブカテゴリーを動的取得
         async function updateItemOptions() {
             const selectedCat = categorySelect.value;
-            
+
             // サブカテゴリー選択をクリア
             itemSelect.innerHTML = '<option value="" disabled selected>選択してください</option>';
             subcategoryIdField.value = '';
-            
+
             if (!selectedCat) return;
-            
+
             try {
                 const response = await fetch(`/equipment/api/subcategories/${selectedCat}`);
                 const subcategories = await response.json();
-                
+
                 subcategories.forEach(subcategory => {
                     const option = document.createElement('option');
                     option.value = subcategory.id;
@@ -298,9 +311,9 @@
         }
 
         categorySelect.addEventListener('change', updateItemOptions);
-        
+
         // サブカテゴリー選択時にsubcategoryIdフィールドに値をセット
-        itemSelect.addEventListener('change', function() {
+        itemSelect.addEventListener('change', function () {
             subcategoryIdField.value = this.value;
         });
 
@@ -314,4 +327,5 @@
         /*]]>*/
     </script>
 </body>
+
 </html>

@@ -77,7 +77,7 @@ public class EquipmentController {
      */
     @GetMapping("/")
     public String root() {
-        return "redirect:/equipment/search";
+        return "redirect:/equipment/list";
     }
 
     /**

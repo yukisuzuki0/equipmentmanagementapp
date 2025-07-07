@@ -49,7 +49,8 @@
         input[type="text"], 
         input[type="number"], 
         input[type="date"], 
-        select {
+        select,
+        textarea {
             width: 100%;
             padding: 8px 12px;
             border: 1px solid #ddd;
@@ -58,10 +59,16 @@
             box-sizing: border-box;
         }
 
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
         input[type="text"]:focus, 
         input[type="number"]:focus, 
         input[type="date"]:focus, 
-        select:focus {
+        select:focus,
+        textarea:focus {
             outline: none;
             border-color: #4CAF50;
             box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
@@ -187,7 +194,7 @@
                 </tr>
                 <tr>
                     <th>仕様</th>
-                    <td><input type="text" th:field="*{specification}" /></td>
+                    <td><textarea th:field="*{specification}"></textarea></td>
                 </tr>
                 <tr>
                     <th>取得価格 <span class="required">*</span></th>
