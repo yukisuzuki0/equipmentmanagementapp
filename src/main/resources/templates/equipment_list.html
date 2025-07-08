@@ -347,7 +347,7 @@
 
                 <!-- 使用期限（設定されている場合のみ表示） -->
                 <td
-                    th:text="${equipment.usageDeadline != null} ? '〜' + ${#dates.format(equipment.usageDeadline, 'yyyy/MM/dd')} : ''">
+                    th:text="${equipment.usageDeadline != null} ? '〜' + ${#temporals.format(equipment.usageDeadline, 'yyyy/MM/dd')} : ''">
                 </td>
             </tr>
         </tbody>

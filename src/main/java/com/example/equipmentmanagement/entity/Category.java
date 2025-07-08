@@ -24,4 +24,7 @@ public class Category {
 
     /** カテゴリー名 */
     private String name;
+    
+    /** カテゴリーコード */
+    private String code;
 } 

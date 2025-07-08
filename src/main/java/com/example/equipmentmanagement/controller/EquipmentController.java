@@ -316,8 +316,9 @@ public class EquipmentController {
             equipment.setUsageDeadline(LocalDate.of(usageYear, usageMonth, usageDay));
         }
 
-        // 管理番号を自動生成
-        equipment.setManagementNumber(generateNextManagementNumber());/**←-------------------------------ここ */
+        // カテゴリーコードを取得して管理番号を自動生成
+        String categoryCode = getCategoryCodeById(equipment.getCategoryCode());
+        equipment.setManagementNumber(generateNextManagementNumber(categoryCode));/**←-------------------------------ここ */
         equipmentRepository.save(equipment);
 
         return "redirect:/equipment/list";
@@ -517,16 +518,38 @@ public class EquipmentController {
     }
     
     /**
+     * カテゴリーIDからカテゴリーコードを取得
+     * 
+     * @param categoryId カテゴリーID
+     * @return カテゴリーコード（見つからない場合は"EQ"を返す）
+     */
+    private String getCategoryCodeById(String categoryId) {
+        if (categoryId == null || categoryId.isEmpty()) {
+            return "EQ"; // デフォルト値
+        }
+        
+        try {
+            Integer id = Integer.parseInt(categoryId);
+            return categoryRepository.findById(id)
+                    .map(Category::getCode)
+                    .orElse("EQ"); // 見つからない場合はデフォルト値
+        } catch (NumberFormatException e) {
+            return "EQ"; // 数値変換に失敗した場合はデフォルト値
+        }
+    }
+    
+    /**
      * 管理番号の自動生成
      * 
-     * 現在年を使用して「EQ年-連番」形式の管理番号を生成します。
-     * 例：EQ2024-0001, EQ2024-0002...
+     * カテゴリーコードと現在年を使用して「カテゴリーコード年-連番」形式の管理番号を生成します。
+     * 例：KG2024-0001, JT2024-0001, TM2024-0001...
      * 
+     * @param categoryCode カテゴリーコード
      * @return 生成された管理番号
      */
-    private String generateNextManagementNumber() {/**←-------------------------------ここ */
+    private String generateNextManagementNumber(String categoryCode) {
         int year = Year.now().getValue();
-        String prefix = "EQ" + year + "-";
+        String prefix = categoryCode + year + "-";
 
         // 既存の管理番号から最大番号を取得
         List<String> numbers = equipmentRepository.findAll().stream()

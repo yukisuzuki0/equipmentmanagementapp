@@ -247,7 +247,7 @@
                             </span>
                             <span th:if="${equipment.locationCode == null}">不明</span>
                         </td>
-                        <td th:text="${equipment.usageDeadline != null} ? '〜' + ${#dates.format(equipment.usageDeadline, 'yyyy/MM/dd')} : ''"></td>
+                        <td th:text="${equipment.usageDeadline != null} ? '〜' + ${#temporals.format(equipment.usageDeadline, 'yyyy/MM/dd')} : ''"></td>
                         <td class="checkbox-cell">
                             <input type="checkbox" name="selectedIds" th:value="${equipment.id}" class="delete-checkbox">
                         </td>
