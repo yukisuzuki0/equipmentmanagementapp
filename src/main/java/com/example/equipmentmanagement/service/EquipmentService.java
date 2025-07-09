@@ -211,21 +211,7 @@ public class EquipmentService {
         EquipmentDto dto = new EquipmentDto();
         
         // 基本情報をコピー
-        dto.setId(equipment.getId());
-        dto.setManagementNumber(equipment.getManagementNumber());
-        dto.setCategoryCode(equipment.getCategoryCode());
-        dto.setItemCode(equipment.getItemCode());
-        dto.setName(equipment.getName());
-        dto.setModelNumber(equipment.getModelNumber());
-        dto.setManufacturer(equipment.getManufacturer());
-        dto.setSpecification(equipment.getSpecification());
-        dto.setCost(equipment.getCost());
-        dto.setPurchaseDate(equipment.getPurchaseDate());
-        dto.setQuantity(equipment.getQuantity());
-        dto.setLocationCode(equipment.getLocationCode());
-        dto.setIsBroken(equipment.getIsBroken());
-        dto.setIsAvailableForLoan(equipment.getIsAvailableForLoan());
-        dto.setUsageDeadline(equipment.getUsageDeadline());
+        copyBasicInfo(dto, equipment);
 
         // 設置場所コードを表示用ラベルに変換（事前に取得したマップを使用）
         dto.setLocationLabel(convertLocationCodeToLabel(equipment.getLocationCode(), locationMap));
@@ -241,6 +227,30 @@ public class EquipmentService {
         calculateDepreciation(dto, equipment, lifespan);
 
         return dto;
+    }
+
+    /**
+     * 基本情報をDTOにコピーするヘルパーメソッド
+     * 
+     * @param dto コピー先のDTO
+     * @param equipment コピー元のエンティティ
+     */
+    private void copyBasicInfo(EquipmentDto dto, Equipment equipment) {
+        dto.setId(equipment.getId());
+        dto.setManagementNumber(equipment.getManagementNumber());
+        dto.setCategoryCode(equipment.getCategoryCode());
+        dto.setItemCode(equipment.getItemCode());
+        dto.setName(equipment.getName());
+        dto.setModelNumber(equipment.getModelNumber());
+        dto.setManufacturer(equipment.getManufacturer());
+        dto.setSpecification(equipment.getSpecification());
+        dto.setCost(equipment.getCost());
+        dto.setPurchaseDate(equipment.getPurchaseDate());
+        dto.setQuantity(equipment.getQuantity());
+        dto.setLocationCode(equipment.getLocationCode());
+        dto.setIsBroken(equipment.getIsBroken());
+        dto.setIsAvailableForLoan(equipment.getIsAvailableForLoan());
+        dto.setUsageDeadline(equipment.getUsageDeadline());
     }
 
     /**
@@ -395,25 +405,40 @@ public class EquipmentService {
      * @return 生成された管理番号
      */
     private String generateNextManagementNumber(String categoryCode) {
-        int year = Year.now().getValue();
-        String prefix = categoryCode + year + "-";
+        int currentYear = Year.now().getValue();
+        String managementNumberPrefix = categoryCode + currentYear + "-";
 
         // 既存の管理番号から最大番号を取得
-        List<String> numbers = equipmentRepository.findAll().stream()
+        int nextSequentialNumber = findNextSequentialNumber(managementNumberPrefix);
+
+        return managementNumberPrefix + String.format("%04d", nextSequentialNumber);
+    }
+    
+    /**
+     * 次の連番を見つける
+     * 
+     * 指定されたプレフィックスで始まる管理番号の最大連番に1を足した値を返します。
+     * 
+     * @param prefix 管理番号のプレフィックス
+     * @return 次の連番
+     */
+    private int findNextSequentialNumber(String prefix) {
+        List<String> existingNumbers = equipmentRepository.findAll().stream()
                 .map(Equipment::getManagementNumber)
                 .filter(num -> num != null && num.startsWith(prefix))
                 .sorted()
                 .toList();
 
         int nextNumber = 1;
-        if (!numbers.isEmpty()) {
-            String last = numbers.get(numbers.size() - 1);
+        if (!existingNumbers.isEmpty()) {
+            String lastNumber = existingNumbers.get(existingNumbers.size() - 1);
             try {
-                nextNumber = Integer.parseInt(last.substring(prefix.length())) + 1;
+                nextNumber = Integer.parseInt(lastNumber.substring(prefix.length())) + 1;
             } catch (NumberFormatException ignored) {
+                // 数値変換に失敗した場合はデフォルト値の1を使用
             }
         }
-
-        return prefix + String.format("%04d", nextNumber);
+        
+        return nextNumber;
     }
 } 

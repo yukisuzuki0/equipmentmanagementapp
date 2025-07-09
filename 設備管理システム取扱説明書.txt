@@ -5,6 +5,7 @@
 【システム概要】
 本システムは、企業や組織の設備・備品を管理し、減価償却計算を自動化するWebアプリケーションです。
 Spring Bootフレームワークを使用して開発されており、ブラウザから簡単に操作できます。
+最新のリファクタリングにより、コードの可読性と保守性が向上しました。
 
 【主な機能】
 1. 設備の登録・編集・削除
@@ -27,7 +28,7 @@ Spring Bootフレームワークを使用して開発されており、ブラウ
 3. 以下のコマンドを実行：
    Windows: mvnw.cmd spring-boot:run
    Mac/Linux: ./mvnw spring-boot:run
-4. ブラウザで  にアクセス（初期画面は検索画面）
+4. ブラウザで http://localhost:8080 にアクセス（初期画面は検索画面）
 
 【データベース設定】
 設定ファイル：src/main/resources/application.properties
@@ -38,7 +39,7 @@ spring.datasource.username=teamkaihatsu
 spring.datasource.password=（パスワードを設定）
 spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
 
-H2 Database使用時（開発・テスト用）：http://localhost:8080/equipment/search
+H2 Database使用時（開発・テスト用）：
 spring.datasource.url=jdbc:h2:mem:testdb
 spring.datasource.driver-class-name=org.h2.Driver
 
@@ -80,7 +81,7 @@ URL: /equipment/create-form
 機能：
 - 新しい設備の登録
 - カテゴリー選択時の品目自動更新（Ajax）
-- 管理番号の自動生成
+- 管理番号の自動生成（カテゴリーコードと年に基づく最適化されたアルゴリズム）
 
 入力項目：
 - カテゴリーコード（プルダウン）
@@ -93,7 +94,7 @@ URL: /equipment/create-form
 - 購入日（年月日を個別選択）
 - 数量（デフォルト1）
 - 設置場所（プルダウン）
-- 使用期限（任意、年月日を個別選択）
+- 使用期限（任意、年月日を個別選択、無効な日付は自動検出）
 - 故障状態（チェックボックス）
 - 貸出可能状態（チェックボックス）
 
@@ -110,6 +111,7 @@ URL: /equipment/edit?id=設備ID
 機能：
 - 既存設備の情報更新
 - 入力項目は登録画面と同様
+- 最適化されたデータ処理による高速な表示と更新
 
 操作方法：
 1. 設備一覧から「編集」ボタンをクリック
@@ -123,6 +125,7 @@ URL: /equipment/search
 機能：
 - 設置場所と品名による設備検索
 - 検索結果の一覧表示
+- 最適化されたクエリによる高速検索
 
 検索条件：
 - 設置場所（プルダウン、「未選択」オプション有り）
@@ -164,29 +167,31 @@ URL: /equipment/delete-mode
 - 3年経過後の帳簿価額：25,000円
 
 ■ 表示項目の説明
-- 経過年数：購入日から現在日までの年数
+- 経過年数：購入日から現在日までの年数（最適化された計算方法）
 - 年間減価償却額：定額法による年間償却額
 - 帳簿価額：取得価額 - 累積減価償却額
 - 減価償却状況：「継続中」「終了」等のステータス
 
 【設置場所について】
 設置場所はデータベースの「location」テーブルから動的に取得されます。
+最適化されたデータアクセス方法により、高速な表示が可能になりました。
 システム管理者は必要に応じてデータベースの設置場所マスタを更新してください。
 
 【管理番号の命名規則】
-形式：EQ年-連番（4桁）
-例：EQ2024-0001、EQ2024-0002...
+形式：カテゴリーコード+年-連番（4桁）
+例：KG2024-0001、JT2024-0001、TM2024-0001...
 
-システムが自動生成するため、手動での入力は不要です。
+システムが最適化されたアルゴリズムで自動生成するため、手動での入力は不要です。
 
 【データベーステーブル構成】
 
 ■ equipment（設備テーブル）
 - id：設備ID（主キー、自動採番）
 - management_number：管理番号（ユニーク）
-- main_category_code：メインカテゴリーコード
-- sub_category_code：サブカテゴリーコード
-- item_name：品名
+- category_code：カテゴリーコード
+- item_code：品目コード
+- subcategory_id：サブカテゴリーID
+- name：品名
 - model_number：型番
 - manufacturer：メーカー
 - specification：仕様
@@ -203,16 +208,47 @@ URL: /equipment/delete-mode
 
 ■ equipment_lifespan（設備寿命マスタテーブル）
 - id：ID（主キー、自動採番）
-- main_category_code：メインカテゴリーコード
-- main_category_label：メインカテゴリー表示名
-- sub_category_code：サブカテゴリーコード
-- sub_category_label：サブカテゴリー表示名
+- category_code：カテゴリーコード
+- item_code：品目コード
 - lifespan_years：法定耐用年数
 
 ■ location（設置場所テーブル）
-- code：場所コード（主キー）
+- id：ID（主キー）
 - name：場所名
-- parent_code：親場所コード
+- parent_id：親場所ID
+
+■ category（カテゴリーテーブル）
+- id：ID（主キー）
+- code：カテゴリーコード
+- name：カテゴリー名
+
+■ subcategory（サブカテゴリーテーブル）
+- id：ID（主キー）
+- category_id：カテゴリーID（外部キー）
+- code：サブカテゴリーコード
+- name：サブカテゴリー名
+
+■ useful_life（耐用年数テーブル）
+- id：ID（主キー）
+- subcategory_id：サブカテゴリーID（外部キー）
+- useful_years：耐用年数
+
+【システムの最適化ポイント】
+
+■ データアクセスの最適化
+- バッチ処理によるデータ取得の効率化
+- キャッシングを活用した高速データアクセス
+- インデックスを活用した検索パフォーマンスの向上
+
+■ コード構造の改善
+- 責任の明確な分離（サービス層とコントローラー層）
+- 共通処理のメソッド抽出による重複コードの削減
+- 変数名の明確化による可読性の向上
+
+■ エラー処理の強化
+- 日付処理における例外ハンドリングの改善
+- データ変換時の堅牢性向上
+- ユーザー入力値の検証強化
 
 【トラブルシューティング】
 
@@ -260,7 +296,8 @@ MySQL使用時：mysqldump コマンドを使用
 
 設備管理システム開発チーム
 Equipment Management Team
-バージョン：1.0
+バージョン：1.1
 作成日：2024年
+最終更新日：2024年
 
 ===============================================

@@ -109,25 +109,56 @@ public class EquipmentController {
         List<EquipmentDto> equipmentDtoList = equipmentService.convertToDtoList(equipments);
         
         // 設置場所名を取得
-        String locationName = null;
-        if (location != null && !location.isEmpty()) {
-            try {
-                Integer locationId = Integer.parseInt(location);
-                locationName = locationRepository.findById(locationId)
-                    .map(Location::getName)
-                    .orElse("不明");
-            } catch (NumberFormatException e) {
-                locationName = "不明";
-            }
-        }
+        String locationName = getLocationNameById(location);
         
+        addSearchAttributesToModel(model, equipmentDtoList, searchType, location, name, locationName);
+        
+        return "equipment_list";
+    }
+    
+    /**
+     * 検索結果をモデルに追加
+     * 
+     * @param model モデル
+     * @param equipmentDtoList 設備DTOリスト
+     * @param searchType 検索タイプ
+     * @param location 設置場所コード
+     * @param name 品名
+     * @param locationName 設置場所名
+     */
+    private void addSearchAttributesToModel(
+            Model model, 
+            List<EquipmentDto> equipmentDtoList, 
+            String searchType, 
+            String location, 
+            String name, 
+            String locationName) {
         model.addAttribute("equipments", equipmentDtoList);
         model.addAttribute("searchType", searchType);
         model.addAttribute("searchLocation", location);
         model.addAttribute("searchName", name);
         model.addAttribute("locationName", locationName);
+    }
+    
+    /**
+     * 設置場所IDから設置場所名を取得
+     * 
+     * @param locationId 設置場所ID
+     * @return 設置場所名（見つからない場合は「不明」）
+     */
+    private String getLocationNameById(String locationId) {
+        if (locationId == null || locationId.isEmpty()) {
+            return null;
+        }
         
-        return "equipment_list";
+        try {
+            Integer id = Integer.parseInt(locationId);
+            return locationRepository.findById(id)
+                .map(Location::getName)
+                .orElse("不明");
+        } catch (NumberFormatException e) {
+            return "不明";
+        }
     }
 
     /**
@@ -159,11 +190,19 @@ public class EquipmentController {
     @GetMapping("/equipment/create-form")
     public String showCreateForm(Model model) {
         model.addAttribute("equipmentForm", new Equipment());
+        addCommonFormAttributes(model);
+        return "equipment_create";
+    }
+
+    /**
+     * フォームに共通の属性を追加
+     * 
+     * @param model モデル
+     */
+    private void addCommonFormAttributes(Model model) {
         model.addAttribute("locationOptions", getLocationOptions());
         model.addAttribute("categoryOptions", getCategoryOptionsFromDatabase());
         model.addAttribute("categoryItemMap", getCategoryItemMapFromDatabase());
-
-        return "equipment_create";
     }
 
     /**
@@ -211,10 +250,7 @@ public class EquipmentController {
     public String editEquipment(@RequestParam("id") Integer id, Model model) {
         Equipment equipment = equipmentService.getEquipmentById(id);
         model.addAttribute("equipmentForm", equipment);
-        model.addAttribute("locationOptions", getLocationOptions());
-        model.addAttribute("categoryOptions", getCategoryOptionsFromDatabase());
-        model.addAttribute("categoryItemMap", getCategoryItemMapFromDatabase());
-
+        addCommonFormAttributes(model);
         return "equipment_edit";
     }
 
@@ -388,15 +424,26 @@ public class EquipmentController {
     /**
      * 使用期限のLocalDateオブジェクトを作成
      * 
+     * 年月日の各パラメータからLocalDateオブジェクトを作成します。
+     * いずれかのパラメータがnullの場合はnullを返します。
+     * 
      * @param year 年
      * @param month 月
      * @param day 日
      * @return 使用期限のLocalDate（パラメータが不完全な場合はnull）
      */
     private LocalDate createUsageDeadline(Integer year, Integer month, Integer day) {
-        if (year != null && month != null && day != null) {
-            return LocalDate.of(year, month, day);
+        boolean hasAllDateComponents = year != null && month != null && day != null;
+        
+        if (hasAllDateComponents) {
+            try {
+                return LocalDate.of(year, month, day);
+            } catch (Exception e) {
+                // 無効な日付の場合はnullを返す
+                return null;
+            }
         }
+        
         return null;
     }
 }

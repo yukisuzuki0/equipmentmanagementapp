@@ -57,23 +57,26 @@ public class DepreciationService {
     /**
      * 累積減価償却額を計算します
      * 
+     * 購入日から計算基準日までの経過年数に基づいて累積減価償却額を計算します。
+     * 経過年数が耐用年数を超える場合は、耐用年数分の減価償却額を返します。
+     * 
      * @param equipment 計算対象の設備
-     * @param today 計算基準日
+     * @param referenceDate 計算基準日
      * @return 累積減価償却額（耐用年数を超えた場合は取得価額まで）
      */
-    public double calculateAccumulatedDepreciation(Equipment equipment, LocalDate today) {
-        int lifespan = getLifespanYears(equipment);
-        if (lifespan <= 0) return 0;
+    public double calculateAccumulatedDepreciation(Equipment equipment, LocalDate referenceDate) {
+        int usefulLifeYears = getLifespanYears(equipment);
+        if (usefulLifeYears <= 0) return 0;
         
         // 購入日がnullの場合は0を返す
         if (equipment.getPurchaseDate() == null) return 0;
 
-        // 購入日から今日までの経過年数を計算
-        int yearsUsed = Period.between(equipment.getPurchaseDate(), today).getYears();
+        // 購入日から基準日までの経過年数を計算
+        int elapsedYears = Period.between(equipment.getPurchaseDate(), referenceDate).getYears();
         // 耐用年数を超えた場合は耐用年数で制限
-        yearsUsed = Math.min(yearsUsed, lifespan);
+        int depreciableYears = Math.min(elapsedYears, usefulLifeYears);
 
-        return calculateAnnualDepreciation(equipment) * yearsUsed;
+        return calculateAnnualDepreciation(equipment) * depreciableYears;
     }
 
     /**
