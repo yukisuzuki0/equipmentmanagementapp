@@ -4,7 +4,6 @@ import com.example.equipmentmanagement.dto.EquipmentDto;
 import com.example.equipmentmanagement.entity.*;
 import com.example.equipmentmanagement.repository.*;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -32,7 +31,6 @@ public class EquipmentService {
     private final SubcategoryRepository subcategoryRepository;
     private final DepreciationService depreciationService;
 
-    @Autowired
     public EquipmentService(
             EquipmentRepository equipmentRepository,
             LocationRepository locationRepository,

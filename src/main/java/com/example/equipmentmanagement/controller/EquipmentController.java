@@ -7,13 +7,11 @@ import com.example.equipmentmanagement.repository.*;
 import com.example.equipmentmanagement.service.DepreciationService;
 import com.example.equipmentmanagement.service.EquipmentService;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.time.Year;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -49,7 +47,6 @@ public class EquipmentController {
     private final CategoryRepository categoryRepository;
     private final SubcategoryRepository subcategoryRepository;
 
-    @Autowired
     public EquipmentController(
             EquipmentService equipmentService,
             DepreciationService depreciationService,
