@@ -24,7 +24,15 @@ import java.time.LocalDateTime;
  */
 @Data
 @Entity
-@Table(name = "equipment")
+@Table(name = "equipment", 
+    indexes = {
+        @Index(name = "idx_equipment_location", columnList = "locationCode"),
+        @Index(name = "idx_equipment_name", columnList = "name"),
+        @Index(name = "idx_equipment_category", columnList = "categoryCode"),
+        @Index(name = "idx_equipment_item", columnList = "itemCode"),
+        @Index(name = "idx_equipment_subcategory", columnList = "subcategory_id")
+    }
+)
 public class Equipment {
 
     /** 設備の一意識別子（主キー） */
@@ -33,7 +41,7 @@ public class Equipment {
     private Integer id;
 
     /** 管理番号（ユニーク制約あり、例：EQ2024-0001） */
-    @Column(name = "management_number", nullable = false, unique = true) /**←-------------------------------ここ */
+    @Column(name = "management_number", nullable = false, unique = true)
     private String managementNumber;
 
     /** メインカテゴリーコード（設備の大分類） */

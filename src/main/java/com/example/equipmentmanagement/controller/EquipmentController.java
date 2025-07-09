@@ -5,6 +5,7 @@ import com.example.equipmentmanagement.dto.EquipmentDto;
 import com.example.equipmentmanagement.entity.*;
 import com.example.equipmentmanagement.repository.*;
 import com.example.equipmentmanagement.service.DepreciationService;
+import com.example.equipmentmanagement.service.EquipmentService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -42,33 +43,25 @@ import java.util.HashMap;
 @Controller
 public class EquipmentController {
 
-    /** 設備リポジトリ */
-    @Autowired
-    private EquipmentRepository equipmentRepository;
+    private final EquipmentService equipmentService;
+    private final DepreciationService depreciationService;
+    private final LocationRepository locationRepository;
+    private final CategoryRepository categoryRepository;
+    private final SubcategoryRepository subcategoryRepository;
 
-    /** 設備寿命リポジトリ 
     @Autowired
-    private EquipmentLifespanRepository equipmentLifespanRepository;*/
-
-    /** 設置場所リポジトリ */
-    @Autowired
-    private LocationRepository locationRepository;
-
-    /** 減価償却計算サービス */
-    @Autowired
-    private DepreciationService depreciationService;
-    
-    /** メインカテゴリーリポジトリ */
-    @Autowired
-    private CategoryRepository categoryRepository;
-    
-    /** サブカテゴリーリポジトリ */
-    @Autowired
-    private SubcategoryRepository subcategoryRepository;
-    
-    /** 耐用年数リポジトリ 
-    @Autowired
-    private UsefulLifeRepository usefulLifeRepository;*/
+    public EquipmentController(
+            EquipmentService equipmentService,
+            DepreciationService depreciationService,
+            LocationRepository locationRepository,
+            CategoryRepository categoryRepository,
+            SubcategoryRepository subcategoryRepository) {
+        this.equipmentService = equipmentService;
+        this.depreciationService = depreciationService;
+        this.locationRepository = locationRepository;
+        this.categoryRepository = categoryRepository;
+        this.subcategoryRepository = subcategoryRepository;
+    }
 
     /**
      * ルートパスへのアクセスを検索画面にリダイレクト
@@ -112,46 +105,27 @@ public class EquipmentController {
             @RequestParam(value = "name", required = false) String name,
             Model model) {
         
-        List<Equipment> equipments = new ArrayList<>();
+        List<Equipment> equipments = equipmentService.searchEquipments(searchType, location, name);
+        List<EquipmentDto> equipmentDtoList = equipmentService.convertToDtoList(equipments);
         
-        // 検索タイプに応じて検索実行
-        switch (searchType) {
-            case "location":
-                if (location != null && !location.isEmpty()) {
-                    equipments = equipmentRepository.findByLocationCode(location);
-                } else {
-                    equipments = equipmentRepository.findAll();
-                }
-                break;
-            case "name":
-                if (name != null && !name.isEmpty()) {
-                    equipments = equipmentRepository.findByNameContainingIgnoreCase(name);
-                } else {
-                    equipments = new ArrayList<>();
-                }
-                break;
-            case "both":
-                if (location != null && !location.isEmpty() && name != null && !name.isEmpty()) {
-                    equipments = equipmentRepository.findByLocationCodeAndNameContainingIgnoreCase(location, name);
-                } else if (location != null && !location.isEmpty()) {
-                    equipments = equipmentRepository.findByLocationCode(location);
-                } else if (name != null && !name.isEmpty()) {
-                    equipments = equipmentRepository.findByNameContainingIgnoreCase(name);
-                } else {
-                    equipments = equipmentRepository.findAll();
-                }
-                break;
-            default:
-                equipments = equipmentRepository.findAll();
+        // 設置場所名を取得
+        String locationName = null;
+        if (location != null && !location.isEmpty()) {
+            try {
+                Integer locationId = Integer.parseInt(location);
+                locationName = locationRepository.findById(locationId)
+                    .map(Location::getName)
+                    .orElse("不明");
+            } catch (NumberFormatException e) {
+                locationName = "不明";
+            }
         }
-        
-        // エンティティをDTO（表示用）に変換
-        List<EquipmentDto> equipmentDtoList = convertToDtoList(equipments);
         
         model.addAttribute("equipments", equipmentDtoList);
         model.addAttribute("searchType", searchType);
         model.addAttribute("searchLocation", location);
         model.addAttribute("searchName", name);
+        model.addAttribute("locationName", locationName);
         
         return "equipment_list";
     }
@@ -166,96 +140,11 @@ public class EquipmentController {
      */
     @GetMapping("/equipment/list")
     public String getEquipmentList(Model model) {
-        List<Equipment> equipments = equipmentRepository.findAll();
-
-        // エンティティをDTO（表示用）に変換
-        List<EquipmentDto> equipmentDtoList = convertToDtoList(equipments);
+        List<Equipment> equipments = equipmentService.getAllEquipments();
+        List<EquipmentDto> equipmentDtoList = equipmentService.convertToDtoList(equipments);
 
         model.addAttribute("equipments", equipmentDtoList);
         return "equipment_list";
-    }
-
-    /**
-     * 設備エンティティリストをDTOリストに変換
-     * 
-     * @param equipments 設備エンティティリスト
-     * @return 設備DTOリスト
-     */
-    private List<EquipmentDto> convertToDtoList(List<Equipment> equipments) {
-        return equipments.stream().map(e -> {
-            EquipmentDto dto = new EquipmentDto();
-            // 基本情報をコピー
-            dto.setId(e.getId());
-            dto.setManagementNumber(e.getManagementNumber());
-            dto.setCategoryCode(e.getCategoryCode());
-            dto.setItemCode(e.getItemCode());
-            dto.setName(e.getName());
-            dto.setModelNumber(e.getModelNumber());
-            dto.setManufacturer(e.getManufacturer());
-            dto.setSpecification(e.getSpecification());
-            dto.setCost(e.getCost());
-            dto.setPurchaseDate(e.getPurchaseDate());
-            dto.setQuantity(e.getQuantity());
-            dto.setLocationCode(e.getLocationCode());
-            dto.setIsBroken(e.getIsBroken());
-            dto.setIsAvailableForLoan(e.getIsAvailableForLoan());
-            dto.setUsageDeadline(e.getUsageDeadline());
-
-            // 設置場所コードを表示用ラベルに変換
-            dto.setLocationLabel(convertLocationCodeToLabel(e.getLocationCode()));
-            
-            // カテゴリー名とサブカテゴリー名を設定
-            try {
-                if (e.getCategoryCode() != null) {
-                    Integer categoryId = Integer.parseInt(e.getCategoryCode());
-                    categoryRepository.findById(categoryId).ifPresent(category -> {
-                        dto.setCategoryName(category.getName());
-                    });
-                }
-                
-                if (e.getItemCode() != null) {
-                    Integer subcategoryId = Integer.parseInt(e.getItemCode());
-                    subcategoryRepository.findById(subcategoryId).ifPresent(subcategory -> {
-                        dto.setSubcategoryName(subcategory.getName());
-                    });
-                }
-            } catch (NumberFormatException ex) {
-                // IDの変換に失敗した場合は名前を設定しない
-            }
-
-            // 耐用年数を取得
-            int lifespan = depreciationService.getLifespanYears(e);
-            dto.setLifespanYears(lifespan);
-
-            // 減価償却計算
-            if (e.getPurchaseDate() != null && lifespan > 0) {
-                int elapsed = Math.min(java.time.Period.between(e.getPurchaseDate(), LocalDate.now()).getYears(),
-                        lifespan);
-                dto.setElapsedYears(elapsed);
-
-                if (elapsed > lifespan) {
-                    // 減価償却完了
-                    dto.setDepreciationStatus("終了");
-                    dto.setAnnualDepreciation(0.0);
-                    dto.setBookValue(0.0);
-                } else {
-                    // 減価償却継続中
-                    double annualDep = depreciationService.calculateAnnualDepreciation(e);
-                    dto.setAnnualDepreciation(annualDep);
-                    double bookValue = depreciationService.calculateBookValue(e, LocalDate.now());
-                    dto.setBookValue(bookValue);
-                    dto.setDepreciationStatus(String.format("%.2f", annualDep));
-                }
-            } else {
-                // 購入日や耐用年数が不明な場合
-                dto.setElapsedYears(0);
-                dto.setAnnualDepreciation(0.0);
-                dto.setBookValue(dto.getCost());
-                dto.setDepreciationStatus("-");
-            }
-
-            return dto;
-        }).collect(Collectors.toList());
     }
 
     /**
@@ -271,14 +160,8 @@ public class EquipmentController {
     public String showCreateForm(Model model) {
         model.addAttribute("equipmentForm", new Equipment());
         model.addAttribute("locationOptions", getLocationOptions());
-
-        // メインカテゴリーオプションを取得
-        List<CategoryOption> categoryOptions = getCategoryOptionsFromDatabase();
-        model.addAttribute("categoryOptions", categoryOptions);
-
-        // データベースからカテゴリとサブカテゴリのマッピングを取得
-        Map<String, List<String>> categoryItemMap = getCategoryItemMapFromDatabase();
-        model.addAttribute("categoryItemMap", categoryItemMap);
+        model.addAttribute("categoryOptions", getCategoryOptionsFromDatabase());
+        model.addAttribute("categoryItemMap", getCategoryItemMapFromDatabase());
 
         return "equipment_create";
     }
@@ -308,19 +191,10 @@ public class EquipmentController {
             @RequestParam(value = "usageDeadlineDay", required = false) Integer usageDay,
             @ModelAttribute Equipment equipment) {
 
-        // 購入日を設定
-        equipment.setPurchaseDate(LocalDate.of(year, month, day));
-
-        // 使用期限を設定（任意）
-        if (usageYear != null && usageMonth != null && usageDay != null) {
-            equipment.setUsageDeadline(LocalDate.of(usageYear, usageMonth, usageDay));
-        }
-
-        // カテゴリーコードを取得して管理番号を自動生成
-        String categoryCode = getCategoryCodeById(equipment.getCategoryCode());
-        equipment.setManagementNumber(generateNextManagementNumber(categoryCode));/**←-------------------------------ここ */
-        equipmentRepository.save(equipment);
-
+        LocalDate purchaseDate = LocalDate.of(year, month, day);
+        LocalDate usageDeadline = createUsageDeadline(usageYear, usageMonth, usageDay);
+        
+        equipmentService.createEquipment(equipment, purchaseDate, usageDeadline);
         return "redirect:/equipment/list";
     }
 
@@ -335,17 +209,11 @@ public class EquipmentController {
      */
     @GetMapping("/equipment/edit")
     public String editEquipment(@RequestParam("id") Integer id, Model model) {
-        Equipment equipment = equipmentRepository.findById(id).orElseThrow();
+        Equipment equipment = equipmentService.getEquipmentById(id);
         model.addAttribute("equipmentForm", equipment);
         model.addAttribute("locationOptions", getLocationOptions());
-
-        // メインカテゴリーオプションを取得
-        List<CategoryOption> categoryOptions = getCategoryOptionsFromDatabase();
-        model.addAttribute("categoryOptions", categoryOptions);
-
-        // データベースからカテゴリとサブカテゴリのマッピングを取得
-        Map<String, List<String>> categoryItemMap = getCategoryItemMapFromDatabase();
-        model.addAttribute("categoryItemMap", categoryItemMap);
+        model.addAttribute("categoryOptions", getCategoryOptionsFromDatabase());
+        model.addAttribute("categoryItemMap", getCategoryItemMapFromDatabase());
 
         return "equipment_edit";
     }
@@ -374,17 +242,10 @@ public class EquipmentController {
             @RequestParam(value = "usageDeadlineDay", required = false) Integer usageDay,
             @ModelAttribute Equipment equipment) {
 
-        // 購入日を設定
-        equipment.setPurchaseDate(LocalDate.of(year, month, day));
-
-        // 使用期限を設定（任意）
-        if (usageYear != null && usageMonth != null && usageDay != null) {
-            equipment.setUsageDeadline(LocalDate.of(usageYear, usageMonth, usageDay));
-        } else {
-            equipment.setUsageDeadline(null);
-        }
-
-        equipmentRepository.save(equipment);
+        LocalDate purchaseDate = LocalDate.of(year, month, day);
+        LocalDate usageDeadline = createUsageDeadline(usageYear, usageMonth, usageDay);
+        
+        equipmentService.updateEquipment(equipment, purchaseDate, usageDeadline);
         return "redirect:/equipment/list";
     }
 
@@ -398,7 +259,7 @@ public class EquipmentController {
      */
     @PostMapping("/equipment/delete")
     public String deleteEquipment(@RequestParam("id") Integer id) {
-        equipmentRepository.deleteById(id);
+        equipmentService.deleteEquipmentById(id);
         return "redirect:/equipment/list";
     }
 
@@ -413,9 +274,7 @@ public class EquipmentController {
      */
     @PostMapping("/equipment/update-location")
     public String updateLocation(@RequestParam("id") Integer id, @RequestParam("locationCode") String locationCode) {
-        Equipment equipment = equipmentRepository.findById(id).orElseThrow();
-        equipment.setLocationCode(locationCode);
-        equipmentRepository.save(equipment);
+        equipmentService.updateEquipmentLocation(id, locationCode);
         return "redirect:/equipment/list";
     }
 
@@ -441,6 +300,39 @@ public class EquipmentController {
                 })
                 .collect(Collectors.toList());
     }
+
+    /**
+     * 削除モード画面表示
+     * 
+     * 複数の設備を選択して削除するための画面を表示します。
+     * 
+     * @param model SpringのModelオブジェクト
+     * @return 削除モード画面のテンプレート名
+     */
+    @GetMapping("/equipment/delete-mode")
+    public String showDeleteMode(Model model) {
+        List<Equipment> equipments = equipmentService.getAllEquipments();
+        List<EquipmentDto> equipmentDtoList = equipmentService.convertToDtoList(equipments);
+
+        model.addAttribute("equipments", equipmentDtoList);
+        return "equipment_delete";
+    }
+
+    /**
+     * 複数設備削除処理
+     * 
+     * チェックボックスで選択された複数の設備を一括削除します。
+     * 
+     * @param selectedIds 削除対象の設備IDリスト
+     * @return 設備一覧画面へのリダイレクト
+     */
+    @PostMapping("/equipment/delete-multiple")
+    public String deleteMultipleEquipment(@RequestParam(value = "selectedIds", required = false) List<Integer> selectedIds) {
+        equipmentService.deleteMultipleEquipments(selectedIds);
+        return "redirect:/equipment/list";
+    }
+
+    // ==================== プライベートメソッド ====================
 
     /**
      * データベースからカテゴリ・サブカテゴリーのマッピングを取得
@@ -477,29 +369,6 @@ public class EquipmentController {
     }
 
     /**
-     * 設置場所コードを表示用ラベルに変換
-     * 
-     * @param code 設置場所コード
-     * @return 表示用ラベル
-     */
-    private String convertLocationCodeToLabel(String code) {
-        if (code == null)
-            return "不明";
-            
-        try {
-            // 設置場所コードを数値に変換
-            Integer locationId = Integer.parseInt(code);
-            
-            // データベースから設置場所を検索
-            return locationRepository.findById(locationId)
-                .map(Location::getName)
-                .orElse("不明");
-        } catch (NumberFormatException e) {
-            return "不明";
-        }
-    }
-
-    /**
      * 設置場所オプション一覧を取得
      * 
      * @return 設置場所のIDと名前のマップ
@@ -507,7 +376,6 @@ public class EquipmentController {
     private List<String> getLocationOptions() {
         List<Location> locations = locationRepository.findAll();
         
-        // 設置場所が空の場合は空のリストを返す
         if (locations.isEmpty()) {
             return new ArrayList<>();
         }
@@ -516,92 +384,19 @@ public class EquipmentController {
             .map(location -> location.getId().toString())
             .collect(Collectors.toList());
     }
-    
-    /**
-     * カテゴリーIDからカテゴリーコードを取得
-     * 
-     * @param categoryId カテゴリーID
-     * @return カテゴリーコード（見つからない場合は"EQ"を返す）
-     */
-    private String getCategoryCodeById(String categoryId) {
-        if (categoryId == null || categoryId.isEmpty()) {
-            return "EQ"; // デフォルト値
-        }
-        
-        try {
-            Integer id = Integer.parseInt(categoryId);
-            return categoryRepository.findById(id)
-                    .map(Category::getCode)
-                    .orElse("EQ"); // 見つからない場合はデフォルト値
-        } catch (NumberFormatException e) {
-            return "EQ"; // 数値変換に失敗した場合はデフォルト値
-        }
-    }
-    
-    /**
-     * 管理番号の自動生成
-     * 
-     * カテゴリーコードと現在年を使用して「カテゴリーコード年-連番」形式の管理番号を生成します。
-     * 例：KG2024-0001, JT2024-0001, TM2024-0001...
-     * 
-     * @param categoryCode カテゴリーコード
-     * @return 生成された管理番号
-     */
-    private String generateNextManagementNumber(String categoryCode) {
-        int year = Year.now().getValue();
-        String prefix = categoryCode + year + "-";
-
-        // 既存の管理番号から最大番号を取得
-        List<String> numbers = equipmentRepository.findAll().stream()
-                .map(Equipment::getManagementNumber)
-                .filter(num -> num != null && num.startsWith(prefix))
-                .sorted()
-                .toList();
-
-        int nextNumber = 1;
-        if (!numbers.isEmpty()) {
-            String last = numbers.get(numbers.size() - 1);
-            try {
-                nextNumber = Integer.parseInt(last.substring(prefix.length())) + 1;
-            } catch (NumberFormatException ignored) {
-            }
-        }
-
-        return prefix + String.format("%04d", nextNumber);
-    }
 
     /**
-     * 削除モード画面表示
+     * 使用期限のLocalDateオブジェクトを作成
      * 
-     * 複数の設備を選択して削除するための画面を表示します。
-     * 
-     * @param model SpringのModelオブジェクト
-     * @return 削除モード画面のテンプレート名
+     * @param year 年
+     * @param month 月
+     * @param day 日
+     * @return 使用期限のLocalDate（パラメータが不完全な場合はnull）
      */
-    @GetMapping("/equipment/delete-mode")
-    public String showDeleteMode(Model model) {
-        List<Equipment> equipments = equipmentRepository.findAll();
-
-        // 設備一覧表示と同様の処理でDTOに変換
-        List<EquipmentDto> equipmentDtoList = convertToDtoList(equipments);
-
-        model.addAttribute("equipments", equipmentDtoList);
-        return "equipment_delete";
-    }
-
-    /**
-     * 複数設備削除処理
-     * 
-     * チェックボックスで選択された複数の設備を一括削除します。
-     * 
-     * @param selectedIds 削除対象の設備IDリスト
-     * @return 設備一覧画面へのリダイレクト
-     */
-    @PostMapping("/equipment/delete-multiple")
-    public String deleteMultipleEquipment(@RequestParam(value = "selectedIds", required = false) List<Integer> selectedIds) {
-        if (selectedIds != null && !selectedIds.isEmpty()) {
-            equipmentRepository.deleteAllById(selectedIds);
+    private LocalDate createUsageDeadline(Integer year, Integer month, Integer day) {
+        if (year != null && month != null && day != null) {
+            return LocalDate.of(year, month, day);
         }
-        return "redirect:/equipment/list";
+        return null;
     }
 }

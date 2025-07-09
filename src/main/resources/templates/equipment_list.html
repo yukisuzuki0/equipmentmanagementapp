@@ -222,16 +222,14 @@
         <h3 th:if="${!equipments.isEmpty()}">検索結果</h3>
         <h3 th:if="${equipments.isEmpty()}">検索結果がありません</h3>
         <p th:if="${searchType == 'location' && searchLocation != null && !searchLocation.isEmpty()}">
-            設置場所: <span
-                th:text="${@locationRepository.findById(T(java.lang.Integer).parseInt(searchLocation)).orElse(new com.example.equipmentmanagement.entity.Location()).getName()}"></span>
+            設置場所: <span th:text="${locationName ?: '不明'}"></span>
         </p>
         <p th:if="${searchType == 'name' && searchName != null && !searchName.isEmpty()}">
             品名に "<span th:text="${searchName}"></span>" を含む
         </p>
         <p th:if="${searchType == 'both'}">
             <span th:if="${searchLocation != null && !searchLocation.isEmpty()}">
-                設置場所: <span
-                    th:text="${@locationRepository.findById(T(java.lang.Integer).parseInt(searchLocation)).orElse(new com.example.equipmentmanagement.entity.Location()).getName()}"></span>
+                設置場所: <span th:text="${locationName ?: '不明'}"></span>
             </span>
             <span th:if="${searchName != null && !searchName.isEmpty()}">
                 <span th:if="${searchLocation != null && !searchLocation.isEmpty()}"> かつ </span>
@@ -335,15 +333,9 @@
 
                 <!-- 
                 設置場所の表示
-                コードから日本語表示名に変換
+                DTOから取得した設置場所ラベルを表示
                 -->
-                <td>
-                    <span th:if="${equipment.locationCode != null}">
-                        <span
-                            th:text="${@locationRepository.findById(T(java.lang.Integer).parseInt(equipment.locationCode)).orElse(new com.example.equipmentmanagement.entity.Location()).getName()}"></span>
-                    </span>
-                    <span th:if="${equipment.locationCode == null}">不明</span>
-                </td>
+                <td th:text="${equipment.locationLabel ?: '不明'}"></td>
 
                 <!-- 使用期限（設定されている場合のみ表示） -->
                 <td
