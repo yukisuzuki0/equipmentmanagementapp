@@ -6,10 +6,12 @@
 
 - **設備管理**: 設備の登録・編集・削除・一覧表示
 - **減価償却計算**: 定額法による自動計算と表示
+- **カテゴリー管理**: メインカテゴリーとサブカテゴリーの階層構造
 - **設置場所管理**: 設備の設置場所追跡
 - **一括操作**: 複数設備の一括削除
 - **管理番号**: 年度別の自動管理番号生成
-- **Ajax対応**: カテゴリー選択時の品目動的更新
+- **検索機能**: 設置場所・品名による検索
+- **Ajax対応**: カテゴリー選択時のサブカテゴリー動的更新
 
 ## 🛠 技術スタック
 
@@ -73,13 +75,17 @@ src/
 │   │   │   └── EquipmentController.java          # Webコントローラー
 │   │   ├── entity/
 │   │   │   ├── Equipment.java                    # 設備エンティティ
-│   │   │   ├── Location.java                     # 設置場所エンティティ
-│   │   │   └── EquipmentLifespan.java           # 設備寿命エンティティ
+│   │   │   ├── Category.java                     # カテゴリーエンティティ
+│   │   │   ├── Subcategory.java                  # サブカテゴリーエンティティ
+│   │   │   ├── UsefulLife.java                   # 耐用年数エンティティ
+│   │   │   └── Location.java                     # 設置場所エンティティ
 │   │   ├── repository/
 │   │   │   ├── EquipmentRepository.java          # 設備リポジトリ
-│   │   │   ├── LocationRepository.java           # 設置場所リポジトリ
-│   │   │   └── EquipmentLifespanRepository.java  # 設備寿命リポジトリ
+│   │   │   ├── CategoryRepository.java           # カテゴリーリポジトリ
+│   │   │   ├── SubcategoryRepository.java        # サブカテゴリーリポジトリ
+│   │   │   └── LocationRepository.java           # 設置場所リポジトリ
 │   │   ├── service/
+│   │   │   ├── EquipmentService.java             # 設備管理サービス
 │   │   │   └── DepreciationService.java          # 減価償却計算サービス
 │   │   └── dto/
 │   │       ├── EquipmentDto.java                 # 設備DTO
@@ -90,7 +96,8 @@ src/
 │   │       ├── equipment_list.html              # 設備一覧画面
 │   │       ├── equipment_create.html            # 設備登録画面
 │   │       ├── equipment_edit.html              # 設備編集画面
-│   │       └── equipment_delete.html            # 複数削除画面
+│   │       ├── equipment_delete.html            # 複数削除画面
+│   │       └── equipment_search.html            # 設備検索画面
 └── test/                                        # テストファイル
 ```
 
@@ -103,6 +110,7 @@ src/
 | management_number | VARCHAR (UNIQUE) | 管理番号 |
 | category_code | VARCHAR | カテゴリーコード |
 | item_code | VARCHAR | 品目コード |
+| subcategory_id | INT | サブカテゴリーID |
 | name | VARCHAR | 設備名 |
 | model_number | VARCHAR | 型番 |
 | manufacturer | VARCHAR | メーカー |
@@ -115,32 +123,45 @@ src/
 | is_broken | BOOLEAN | 故障フラグ |
 | is_available_for_loan | BOOLEAN | 貸出可能フラグ |
 | usage_deadline | DATE | 使用期限 |
-| is_disposed | BOOLEAN | 廃棄済みフラグ |
 | created_at | TIMESTAMP | 作成日時 |
 | updated_at | TIMESTAMP | 更新日時 |
 
-### equipment_lifespan（設備寿命マスタ）
+### category（カテゴリーテーブル）
+| カラム名 | 型 | 説明 |
+|---------|---|------|
+| id | INT (PK) | カテゴリーID |
+| name | VARCHAR | カテゴリー名 |
+| code | VARCHAR | カテゴリーコード |
+
+### subcategory（サブカテゴリーテーブル）
+| カラム名 | 型 | 説明 |
+|---------|---|------|
+| id | INT (PK) | サブカテゴリーID |
+| name | VARCHAR | サブカテゴリー名 |
+| category_id | INT (FK) | 親カテゴリーID |
+
+### useful_life（耐用年数テーブル）
 | カラム名 | 型 | 説明 |
 |---------|---|------|
 | id | INT (PK) | ID |
-| category_code | VARCHAR | カテゴリーコード |
-| category_label | VARCHAR | カテゴリー表示名 |
-| item_code | VARCHAR | 品目コード |
-| item_label | VARCHAR | 品目表示名 |
-| lifespan_years | INT | 法定耐用年数 |
+| subcategory_id | INT (FK) | サブカテゴリーID |
+| useful_years | INT | 法定耐用年数 |
 
 ### location（設置場所テーブル）
 | カラム名 | 型 | 説明 |
 |---------|---|------|
-| code | VARCHAR (PK) | 場所コード |
+| id | INT (PK) | 場所ID |
+| code | VARCHAR | 場所コード |
 | name | VARCHAR | 場所名 |
-| parent_code | VARCHAR | 親場所コード |
+| parent_id | INT | 親場所ID |
 
 ## 🔧 API エンドポイント
 
 | Method | URL | 説明 |
 |--------|-----|------|
 | GET | `/equipment/list` | 設備一覧表示 |
+| GET | `/equipment/search` | 設備検索フォーム表示 |
+| GET | `/equipment/search/results` | 設備検索結果表示 |
 | GET | `/equipment/create-form` | 設備登録フォーム表示 |
 | POST | `/equipment/create` | 設備新規登録 |
 | GET | `/equipment/edit?id={id}` | 設備編集フォーム表示 |
@@ -149,7 +170,7 @@ src/
 | GET | `/equipment/delete-mode` | 複数削除モード表示 |
 | POST | `/equipment/delete-multiple` | 複数設備削除 |
 | POST | `/equipment/update-location` | 設置場所更新 |
-| GET | `/equipment/api/items/{categoryCode}` | 品目一覧取得（Ajax） |
+| GET | `/equipment/api/subcategories/{categoryId}` | サブカテゴリー一覧取得（Ajax） |
 
 ## 📈 減価償却計算
 
@@ -174,9 +195,14 @@ src/
 - 設置場所の即時更新
 - 新規登録・一括削除への遷移
 
+### 設備検索画面
+- 設置場所による検索
+- 品名（部分一致）による検索
+- 複合条件検索（設置場所と品名）
+
 ### 設備登録画面
 - 新規設備の登録
-- カテゴリー選択時の品目自動更新
+- カテゴリー選択時のサブカテゴリー自動更新
 - 管理番号の自動生成
 - バリデーション機能
 
