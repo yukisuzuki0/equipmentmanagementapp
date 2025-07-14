@@ -7,6 +7,9 @@ import com.example.equipmentmanagement.repository.*;
 import com.example.equipmentmanagement.service.DepreciationService;
 import com.example.equipmentmanagement.service.EquipmentService;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +21,7 @@ import java.util.stream.Collectors;
 import java.util.Comparator;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.stream.IntStream;
 
 /**
  * 設備管理コントローラークラス
@@ -46,6 +50,9 @@ public class EquipmentController {
     private final LocationRepository locationRepository;
     private final CategoryRepository categoryRepository;
     private final SubcategoryRepository subcategoryRepository;
+    
+    // 1ページあたりの表示件数
+    private static final int PAGE_SIZE = 100;
 
     public EquipmentController(
             EquipmentService equipmentService,
@@ -92,6 +99,7 @@ public class EquipmentController {
      * @param searchType 検索タイプ（location: 設置場所のみ、name: 品名のみ、both: 両方）
      * @param location 設置場所コード（オプショナル）
      * @param name 品名（部分一致、オプショナル）
+     * @param page ページ番号（0ベース）
      * @param model SpringのModelオブジェクト
      * @return 設備一覧画面のテンプレート名
      */
@@ -100,15 +108,26 @@ public class EquipmentController {
             @RequestParam("searchType") String searchType,
             @RequestParam(value = "location", required = false) String location,
             @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "page", defaultValue = "0") int page,
             Model model) {
         
-        List<Equipment> equipments = equipmentService.searchEquipments(searchType, location, name);
-        List<EquipmentDto> equipmentDtoList = equipmentService.convertToDtoList(equipments);
+        // ページネーション情報を作成
+        Pageable pageable = PageRequest.of(page, PAGE_SIZE);
+        
+        // ページネーション付きで検索実行
+        Page<Equipment> equipmentPage = equipmentService.searchEquipments(searchType, location, name, pageable);
+        Page<EquipmentDto> equipmentDtoPage = equipmentService.convertToDtoPage(equipmentPage);
         
         // 設置場所名を取得
         String locationName = getLocationNameById(location);
         
-        addSearchAttributesToModel(model, equipmentDtoList, searchType, location, name, locationName);
+        // 検索パラメータをモデルに追加（ページネーション用）
+        model.addAttribute("currentUrl", "/equipment/search/results");
+        model.addAttribute("searchType", searchType);
+        model.addAttribute("searchLocation", location);
+        model.addAttribute("searchName", name);
+        
+        addSearchAttributesToModel(model, equipmentDtoPage, searchType, location, name, locationName);
         
         return "equipment_list";
     }
@@ -117,7 +136,7 @@ public class EquipmentController {
      * 検索結果をモデルに追加
      * 
      * @param model モデル
-     * @param equipmentDtoList 設備DTOリスト
+     * @param equipmentDtoPage 設備DTOページ
      * @param searchType 検索タイプ
      * @param location 設置場所コード
      * @param name 品名
@@ -125,16 +144,24 @@ public class EquipmentController {
      */
     private void addSearchAttributesToModel(
             Model model, 
-            List<EquipmentDto> equipmentDtoList, 
+            Page<EquipmentDto> equipmentDtoPage, 
             String searchType, 
             String location, 
             String name, 
             String locationName) {
-        model.addAttribute("equipments", equipmentDtoList);
+        model.addAttribute("equipments", equipmentDtoPage.getContent());
+        model.addAttribute("page", equipmentDtoPage);
         model.addAttribute("searchType", searchType);
         model.addAttribute("searchLocation", location);
         model.addAttribute("searchName", name);
         model.addAttribute("locationName", locationName);
+        
+        // ページ番号のリストを作成（1ベースのページ番号）
+        int totalPages = Math.max(1, equipmentDtoPage.getTotalPages());
+        List<Integer> pageNumbers = IntStream.rangeClosed(1, totalPages)
+            .boxed()
+            .collect(Collectors.toList());
+        model.addAttribute("pageNumbers", pageNumbers);
     }
     
     /**
@@ -163,15 +190,32 @@ public class EquipmentController {
      * 
      * 全設備の一覧を取得し、減価償却計算を行った結果を表示用DTOに変換して画面に渡します。
      * 
+     * @param page ページ番号（0ベース）
      * @param model SpringのModelオブジェクト
      * @return 設備一覧画面のテンプレート名
      */
     @GetMapping("/equipment/list")
-    public String getEquipmentList(Model model) {
-        List<Equipment> equipments = equipmentService.getAllEquipments();
-        List<EquipmentDto> equipmentDtoList = equipmentService.convertToDtoList(equipments);
+    public String getEquipmentList(
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            Model model) {
+        // ページネーション情報を作成
+        Pageable pageable = PageRequest.of(page, PAGE_SIZE);
+        
+        // ページネーション付きで全設備を取得
+        Page<Equipment> equipmentPage = equipmentService.getAllEquipments(pageable);
+        Page<EquipmentDto> equipmentDtoPage = equipmentService.convertToDtoPage(equipmentPage);
 
-        model.addAttribute("equipments", equipmentDtoList);
+        model.addAttribute("equipments", equipmentDtoPage.getContent());
+        model.addAttribute("page", equipmentDtoPage);
+        model.addAttribute("currentUrl", "/equipment/list");
+        
+        // ページ番号のリストを作成（1ベースのページ番号）
+        int totalPages = Math.max(1, equipmentDtoPage.getTotalPages());
+        List<Integer> pageNumbers = IntStream.rangeClosed(1, totalPages)
+            .boxed()
+            .collect(Collectors.toList());
+        model.addAttribute("pageNumbers", pageNumbers);
+        
         return "equipment_list";
     }
 
@@ -339,15 +383,32 @@ public class EquipmentController {
      * 
      * 複数の設備を選択して削除するための画面を表示します。
      * 
+     * @param page ページ番号（0ベース）
      * @param model SpringのModelオブジェクト
      * @return 削除モード画面のテンプレート名
      */
     @GetMapping("/equipment/delete-mode")
-    public String showDeleteMode(Model model) {
-        List<Equipment> equipments = equipmentService.getAllEquipments();
-        List<EquipmentDto> equipmentDtoList = equipmentService.convertToDtoList(equipments);
+    public String showDeleteMode(
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            Model model) {
+        // ページネーション情報を作成
+        Pageable pageable = PageRequest.of(page, PAGE_SIZE);
+        
+        // ページネーション付きで全設備を取得
+        Page<Equipment> equipmentPage = equipmentService.getAllEquipments(pageable);
+        Page<EquipmentDto> equipmentDtoPage = equipmentService.convertToDtoPage(equipmentPage);
 
-        model.addAttribute("equipments", equipmentDtoList);
+        model.addAttribute("equipments", equipmentDtoPage.getContent());
+        model.addAttribute("page", equipmentDtoPage);
+        model.addAttribute("currentUrl", "/equipment/delete-mode");
+        
+        // ページ番号のリストを作成（1ベースのページ番号）
+        int totalPages = Math.max(1, equipmentDtoPage.getTotalPages());
+        List<Integer> pageNumbers = IntStream.rangeClosed(1, totalPages)
+            .boxed()
+            .collect(Collectors.toList());
+        model.addAttribute("pageNumbers", pageNumbers);
+        
         return "equipment_delete";
     }
 

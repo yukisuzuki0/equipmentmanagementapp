@@ -1,6 +1,8 @@
 package com.example.equipmentmanagement.repository;
 
 import com.example.equipmentmanagement.entity.Equipment;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
@@ -34,12 +36,30 @@ public interface EquipmentRepository extends JpaRepository<Equipment, Integer> {
     List<Equipment> findByLocationCode(String locationCode);
     
     /**
+     * 設置場所コードで設備を検索（ページネーション対応）
+     * 
+     * @param locationCode 設置場所コード
+     * @param pageable ページネーション情報
+     * @return 該当する設備のページ
+     */
+    Page<Equipment> findByLocationCode(String locationCode, Pageable pageable);
+    
+    /**
      * 品名の部分一致で設備を検索（大文字小文字を区別しない）
      * 
      * @param name 検索する品名（部分一致）
      * @return 該当する設備のリスト
      */
     List<Equipment> findByNameContainingIgnoreCase(String name);
+    
+    /**
+     * 品名の部分一致で設備を検索（大文字小文字を区別しない、ページネーション対応）
+     * 
+     * @param name 検索する品名（部分一致）
+     * @param pageable ページネーション情報
+     * @return 該当する設備のページ
+     */
+    Page<Equipment> findByNameContainingIgnoreCase(String name, Pageable pageable);
     
     /**
      * 設置場所コードと品名の部分一致で設備を検索（大文字小文字を区別しない）
@@ -49,4 +69,22 @@ public interface EquipmentRepository extends JpaRepository<Equipment, Integer> {
      * @return 該当する設備のリスト
      */
     List<Equipment> findByLocationCodeAndNameContainingIgnoreCase(String locationCode, String name);
+    
+    /**
+     * 設置場所コードと品名の部分一致で設備を検索（大文字小文字を区別しない、ページネーション対応）
+     * 
+     * @param locationCode 設置場所コード
+     * @param name 検索する品名（部分一致）
+     * @param pageable ページネーション情報
+     * @return 該当する設備のページ
+     */
+    Page<Equipment> findByLocationCodeAndNameContainingIgnoreCase(String locationCode, String name, Pageable pageable);
+    
+    /**
+     * 全設備を取得（ページネーション対応）
+     * 
+     * @param pageable ページネーション情報
+     * @return 設備のページ
+     */
+    Page<Equipment> findAll(Pageable pageable);
 }

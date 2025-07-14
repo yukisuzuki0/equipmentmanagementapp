@@ -208,6 +208,73 @@
         .preserve-linebreaks {
             white-space: pre-line;
         }
+
+        /* ページネーションのスタイル */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .pagination-item {
+            margin: 5px;
+        }
+
+        .page-link {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            text-decoration: none;
+            color: #2196F3;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            transition: all 0.3s;
+        }
+
+        .page-link:hover {
+            background-color: #e3f2fd;
+            border-color: #2196F3;
+        }
+
+        .page-item.active .page-link {
+            background-color: #2196F3;
+            color: white;
+            border-color: #2196F3;
+        }
+
+        .page-item.disabled .page-link {
+            color: #ccc;
+            pointer-events: none;
+            background-color: #f5f5f5;
+        }
+
+        .pagination-nav {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 8px 16px;
+            border-radius: 20px;
+            text-decoration: none;
+            color: #2196F3;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            transition: all 0.3s;
+        }
+
+        .pagination-nav:hover {
+            background-color: #e3f2fd;
+            border-color: #2196F3;
+        }
+
+        .pagination-nav.disabled {
+            color: #ccc;
+            pointer-events: none;
+            background-color: #f5f5f5;
+        }
     </style>
 
 </head>
@@ -236,7 +303,7 @@
                 品名に "<span th:text="${searchName}"></span>" を含む
             </span>
         </p>
-        <p th:if="${!equipments.isEmpty()}" th:text="${equipments.size()} + '件の設備が見つかりました'"></p>
+        <p th:if="${!equipments.isEmpty()}" th:text="${page.totalElements} + '件の設備が見つかりました'"></p>
     </div>
 
     <!-- 上部操作ボタン群 -->
@@ -344,6 +411,75 @@
             </tr>
         </tbody>
     </table>
+
+    <!-- ページネーション -->
+    <div class="pagination" th:if="${page != null}">
+        <!-- 前へボタン -->
+        <div class="pagination-item">
+            <!-- 検索結果ページの場合 -->
+            <a th:if="${!page.first && currentUrl != null && currentUrl == '/equipment/search/results'}" 
+               th:href="@{/equipment/search/results(page=${page.number - 1}, searchType=${searchType}, location=${searchLocation}, name=${searchName})}" 
+               class="pagination-nav">
+                前へ
+            </a>
+            <!-- 通常の一覧ページの場合 -->
+            <a th:if="${!page.first && (currentUrl == null || currentUrl != '/equipment/search/results')}" 
+               th:href="@{/equipment/list(page=${page.number - 1})}" 
+               class="pagination-nav">
+                前へ
+            </a>
+            <span th:if="${page.first}" class="pagination-nav disabled">前へ</span>
+        </div>
+        
+        <!-- ページ番号ボタン - 少なくとも「①」は常に表示 -->
+        <div class="pagination-item">
+            <!-- 検索結果ページの場合 -->
+            <a th:if="${currentUrl != null && currentUrl == '/equipment/search/results'}" 
+               th:href="@{/equipment/search/results(page=0, searchType=${searchType}, location=${searchLocation}, name=${searchName})}" 
+               th:class="${0 == page.number} ? 'page-link active' : 'page-link'"
+               th:text="'1'">
+            </a>
+            <!-- 通常の一覧ページの場合 -->
+            <a th:if="${currentUrl == null || currentUrl != '/equipment/search/results'}" 
+               th:href="@{/equipment/list(page=0)}" 
+               th:class="${0 == page.number} ? 'page-link active' : 'page-link'"
+               th:text="'1'">
+            </a>
+        </div>
+        
+        <!-- その他のページ番号ボタン -->
+        <div class="pagination-item" th:each="pageNumber : ${pageNumbers}" th:if="${pageNumber > 1}">
+            <!-- 検索結果ページの場合 -->
+            <a th:if="${currentUrl != null && currentUrl == '/equipment/search/results'}" 
+               th:href="@{/equipment/search/results(page=${pageNumber - 1}, searchType=${searchType}, location=${searchLocation}, name=${searchName})}" 
+               th:text="${pageNumber}"
+               th:class="${pageNumber - 1 == page.number} ? 'page-link active' : 'page-link'">
+            </a>
+            <!-- 通常の一覧ページの場合 -->
+            <a th:if="${currentUrl == null || currentUrl != '/equipment/search/results'}" 
+               th:href="@{/equipment/list(page=${pageNumber - 1})}" 
+               th:text="${pageNumber}"
+               th:class="${pageNumber - 1 == page.number} ? 'page-link active' : 'page-link'">
+            </a>
+        </div>
+        
+        <!-- 次へボタン - 常に表示し、最後のページの場合は灰色で無効化 -->
+        <div class="pagination-item">
+            <!-- 検索結果ページの場合 -->
+            <a th:if="${!page.last && currentUrl != null && currentUrl == '/equipment/search/results'}" 
+               th:href="@{/equipment/search/results(page=${page.number + 1}, searchType=${searchType}, location=${searchLocation}, name=${searchName})}" 
+               class="pagination-nav">
+                次へ
+            </a>
+            <!-- 通常の一覧ページの場合 -->
+            <a th:if="${!page.last && (currentUrl == null || currentUrl != '/equipment/search/results')}" 
+               th:href="@{/equipment/list(page=${page.number + 1})}" 
+               class="pagination-nav">
+                次へ
+            </a>
+            <span th:if="${page.last}" class="pagination-nav disabled">次へ</span>
+        </div>
+    </div>
 
     <!-- 検索結果がない場合のメッセージ -->
     <div th:if="${equipments.isEmpty() && searchType == null}" class="search-result-info no-results">

@@ -4,6 +4,9 @@ import com.example.equipmentmanagement.dto.EquipmentDto;
 import com.example.equipmentmanagement.entity.*;
 import com.example.equipmentmanagement.repository.*;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -52,6 +55,16 @@ public class EquipmentService {
     public List<Equipment> getAllEquipments() {
         return equipmentRepository.findAll();
     }
+    
+    /**
+     * 全設備をページネーション付きで取得
+     * 
+     * @param pageable ページネーション情報
+     * @return 設備のページ
+     */
+    public Page<Equipment> getAllEquipments(Pageable pageable) {
+        return equipmentRepository.findAll(pageable);
+    }
 
     /**
      * 検索条件に基づいて設備を検索
@@ -87,6 +100,44 @@ public class EquipmentService {
                 }
             default:
                 return equipmentRepository.findAll();
+        }
+    }
+    
+    /**
+     * 検索条件に基づいて設備をページネーション付きで検索
+     * 
+     * @param searchType 検索タイプ
+     * @param location 設置場所コード
+     * @param name 品名
+     * @param pageable ページネーション情報
+     * @return 検索結果の設備ページ
+     */
+    public Page<Equipment> searchEquipments(String searchType, String location, String name, Pageable pageable) {
+        switch (searchType) {
+            case "location":
+                if (location != null && !location.isEmpty()) {
+                    return equipmentRepository.findByLocationCode(location, pageable);
+                } else {
+                    return equipmentRepository.findAll(pageable);
+                }
+            case "name":
+                if (name != null && !name.isEmpty()) {
+                    return equipmentRepository.findByNameContainingIgnoreCase(name, pageable);
+                } else {
+                    return Page.empty(pageable);
+                }
+            case "both":
+                if (location != null && !location.isEmpty() && name != null && !name.isEmpty()) {
+                    return equipmentRepository.findByLocationCodeAndNameContainingIgnoreCase(location, name, pageable);
+                } else if (location != null && !location.isEmpty()) {
+                    return equipmentRepository.findByLocationCode(location, pageable);
+                } else if (name != null && !name.isEmpty()) {
+                    return equipmentRepository.findByNameContainingIgnoreCase(name, pageable);
+                } else {
+                    return equipmentRepository.findAll(pageable);
+                }
+            default:
+                return equipmentRepository.findAll(pageable);
         }
     }
 
@@ -190,6 +241,35 @@ public class EquipmentService {
         return equipments.stream()
                 .map(equipment -> convertToDto(equipment, locationMap, categoryMap, subcategoryMap))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * 設備エンティティのページをDTOページに変換
+     * 
+     * @param equipmentPage 設備エンティティのページ
+     * @return 設備DTOのページ
+     */
+    public Page<EquipmentDto> convertToDtoPage(Page<Equipment> equipmentPage) {
+        // 必要なデータを事前にバッチで取得
+        
+        // 全設置場所をIDをキーにしたマップとして取得
+        Map<Integer, Location> locationMap = locationRepository.findAll().stream()
+                .collect(Collectors.toMap(Location::getId, location -> location));
+                
+        // 全カテゴリーをIDをキーにしたマップとして取得
+        Map<Integer, Category> categoryMap = categoryRepository.findAll().stream()
+                .collect(Collectors.toMap(Category::getId, category -> category));
+                
+        // 全サブカテゴリーをIDをキーにしたマップとして取得
+        Map<Integer, Subcategory> subcategoryMap = subcategoryRepository.findAll().stream()
+                .collect(Collectors.toMap(Subcategory::getId, subcategory -> subcategory));
+        
+        // 一括変換
+        List<EquipmentDto> dtoList = equipmentPage.getContent().stream()
+                .map(equipment -> convertToDto(equipment, locationMap, categoryMap, subcategoryMap))
+                .collect(Collectors.toList());
+        
+        return new PageImpl<>(dtoList, equipmentPage.getPageable(), equipmentPage.getTotalElements());
     }
 
     /**
