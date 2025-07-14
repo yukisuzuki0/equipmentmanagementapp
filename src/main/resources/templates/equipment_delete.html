@@ -227,7 +227,7 @@
             border-color: #2196F3;
         }
 
-        .page-item.active .page-link {
+        .page-link.active {
             background-color: #2196F3;
             color: white;
             border-color: #2196F3;
@@ -334,7 +334,7 @@
                     <span th:if="${page.first}" class="pagination-nav disabled">前へ</span>
                 </div>
                 
-                <!-- ページ番号ボタン - 少なくとも「①」は常に表示 -->
+                <!-- ページ番号ボタン - 少なくとも「1」は常に表示 -->
                 <div class="pagination-item">
                     <a th:href="@{/equipment/delete-mode(page=0)}" 
                        th:class="${0 == page.number} ? 'page-link active' : 'page-link'"
