@@ -37,4 +37,13 @@ public class Location {
     /** 親場所コード（階層構造用、オプショナル） */
     @Column(name = "parent_code")
     private String parentCode;
+    
+    /**
+     * エンティティ保存前の処理
+     * codeとparentCodeが自動生成されないようにする
+     */
+    @PrePersist
+    protected void onCreate() {
+        // 何もしない（自動生成を防止）
+    }
 }
