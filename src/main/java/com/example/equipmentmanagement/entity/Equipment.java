@@ -76,6 +76,7 @@ public class Equipment {
     private Integer quantity = 1;
     
     /** 設置場所コード */
+    @Column(name = "location_code")
     private String locationCode;
     
     /** 耐用年数 */

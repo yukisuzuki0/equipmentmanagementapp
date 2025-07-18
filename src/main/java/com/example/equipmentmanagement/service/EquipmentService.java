@@ -400,17 +400,17 @@ public class EquipmentService {
     }
 
     /**
-     * 設置場所コードを表示用ラベルに変換（最適化版）
+     * 設置場所コードをラベルに変換
      * 
      * @param code 設置場所コード
      * @param locationMap 設置場所マップ
-     * @return 表示用ラベル
+     * @return 設置場所ラベル
      */
     private String convertLocationCodeToLabel(String code, Map<Integer, Location> locationMap) {
-        if (code == null) {
+        if (code == null || code.isEmpty()) {
             return "不明";
         }
-            
+        
         try {
             Integer locationId = Integer.parseInt(code);
             Location location = locationMap.get(locationId);
@@ -420,7 +420,12 @@ public class EquipmentService {
         }
     }
 
-    // 元のメソッドは残しておき、内部実装を変更して互換性を保つ
+    /**
+     * 設置場所コードをラベルに変換（単一変換用）
+     * 
+     * @param code 設置場所コード
+     * @return 設置場所ラベル
+     */
     private String convertLocationCodeToLabel(String code) {
         Map<Integer, Location> locationMap = locationRepository.findAll().stream()
                 .collect(Collectors.toMap(Location::getId, location -> location));

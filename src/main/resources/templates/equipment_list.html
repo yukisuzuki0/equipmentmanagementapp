@@ -9,29 +9,107 @@
 - 新規登録・一括削除への遷移
 - 個別編集機能
 -->
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
 
 <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>設備一覧</title>
     <style>
+        :root {
+            --primary-color: #1976d2;
+            --primary-light: #e3f2fd;
+            --primary-dark: #0d47a1;
+            --success-color: #4CAF50;
+            --success-light: #e8f5e9;
+            --success-dark: #2E7D32;
+            --danger-color: #f44336;
+            --danger-light: #ffebee;
+            --danger-dark: #c62828;
+            --warning-color: #ff9800;
+            --gray-light: #f5f5f5;
+            --gray-medium: #e0e0e0;
+            --gray-dark: #757575;
+            --text-primary: #212121;
+            --text-secondary: #757575;
+            --white: #ffffff;
+            --shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            --border-radius: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'メイリオ', sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background-color: #f8f9fa;
+            padding: 20px;
+            font-size: 16px;
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 24px;
+            color: var(--primary-dark);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 8px;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            background-color: var(--white);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 24px;
+        }
+
         /* テーブルの基本スタイル */
+        .table-responsive {
+            overflow-x: auto;
+            margin-bottom: 24px;
+        }
+
         table {
             border-collapse: collapse;
             width: 100%;
+            min-width: 800px;
+            font-size: 15px;
         }
 
         /* テーブルのセルスタイル */
-        th,
-        td {
-            border: 1px solid #999;
-            padding: 8px;
+        th, td {
+            padding: 12px 16px;
             text-align: left;
+            border-bottom: 1px solid var(--gray-medium);
         }
 
         /* テーブルヘッダーのスタイル */
         th {
-            background-color: #eee;
+            background-color: var(--primary-color);
+            color: var(--white);
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+
+        tr:hover {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+
+        /* 行をクリック可能にするスタイル */
+        tbody tr {
+            cursor: pointer;
+        }
+
+        /* 選択された行のスタイル */
+        tr.selected {
+            background-color: rgba(255, 152, 0, 0.2) !important;
         }
 
         /* アクションボタンのコンテナ */
@@ -43,98 +121,109 @@
         /* 〇マーク（貸出可能・使用不能フラグ）のスタイル */
         .circle {
             font-weight: bold;
-            color: green;
+            color: var(--success-color);
             text-align: center;
         }
 
         /* 上部ボタン用のコンテナスタイル */
         .top-buttons {
-            text-align: right;
-            margin: 10px 0;
             display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 24px;
             justify-content: flex-end;
-            gap: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .top-buttons {
+                justify-content: center;
+            }
         }
 
         /* ボタンの共通スタイル */
         .action-button {
             padding: 10px 20px;
-            font-size: 16px;
+            font-size: 15px;
             border: none;
-            border-radius: 6px;
+            border-radius: var(--border-radius);
             cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-            transition: background-color 0.2s;
+            box-shadow: var(--shadow);
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 120px;
+            font-weight: 500;
         }
 
         /* 新規登録ボタンのスタイル（緑色） */
         .register-button {
-            background-color: #4CAF50;
-            color: white;
+            background-color: var(--success-color);
+            color: var(--white);
         }
 
         .register-button:hover {
-            background-color: #45a049;
+            background-color: var(--success-dark);
         }
 
         /* 編集ボタンのスタイル（青色） */
         .edit-button {
-            background-color: #2196F3;
-            color: white;
+            background-color: var(--primary-color);
+            color: var(--white);
         }
 
         .edit-button:hover {
-            background-color: #0b7dda;
+            background-color: var(--primary-dark);
         }
 
         /* 削除モードボタンのスタイル（赤色） */
         .delete-mode-button {
-            background-color: #f44336;
-            color: white;
+            background-color: var(--danger-color);
+            color: var(--white);
         }
 
         .delete-mode-button:hover {
-            background-color: #da190b;
+            background-color: var(--danger-dark);
         }
 
         /* 検索ボタンのスタイル（紫色） */
         .search-button {
-            background-color: #9C27B0;
-            color: white;
+            background-color: var(--primary-color);
+            color: var(--white);
         }
 
         .search-button:hover {
-            background-color: #7B1FA2;
+            background-color: var(--primary-dark);
         }
 
         /* 減価償却完了設備の行スタイル（青系背景） */
         .depreciation-completed {
-            background-color: #e3f2fd !important;
+            background-color: var(--primary-light) !important;
         }
 
         /* 破損設備の行スタイル（グレーアウト） */
         .broken-equipment {
-            background-color: #f5f5f5 !important;
-            color: #888 !important;
-            opacity: 0.7;
+            background-color: var(--gray-light) !important;
+            color: var(--gray-dark) !important;
+            opacity: 0.8;
         }
 
         .broken-equipment td {
-            background-color: #f5f5f5 !important;
-            color: #888 !important;
+            background-color: var(--gray-light) !important;
+            color: var(--gray-dark) !important;
         }
 
         /* 減価償却完了セルの特別スタイル（強調表示） */
         .depreciation-completed-cell {
-            background-color: #2196f3 !important;
-            color: white !important;
+            background-color: var(--primary-color) !important;
+            color: var(--white) !important;
             font-weight: bold;
             text-align: center;
         }
 
         /* グレーアウト時でも〇マークは見やすく */
         .broken-equipment .circle {
-            color: #666 !important;
+            color: var(--gray-dark) !important;
             font-weight: bold;
         }
 
@@ -147,61 +236,49 @@
 
         /* エラーメッセージの吹き出しスタイル */
         .error-tooltip {
-            position: absolute;
-            background-color: #f44336;
-            color: white;
-            padding: 10px;
-            border-radius: 6px;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: var(--danger-color);
+            color: var(--white);
+            padding: 16px;
+            border-radius: var(--border-radius);
             z-index: 100;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            box-shadow: var(--shadow);
             display: none;
             max-width: 300px;
             text-align: center;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-
-        .error-tooltip:after {
-            content: "";
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            margin-left: -10px;
-            border-width: 10px;
-            border-style: solid;
-            border-color: #f44336 transparent transparent transparent;
-        }
-
-        /* 相対位置を設定 */
-        .radio-container {
-            position: relative;
+            font-weight: 500;
         }
 
         /* 検索結果表示用スタイル */
         .search-result-info {
             margin: 20px 0;
-            padding: 15px;
-            background-color: #e8f5e9;
-            border-left: 5px solid #4CAF50;
-            border-radius: 4px;
+            padding: 16px;
+            background-color: var(--success-light);
+            border-left: 5px solid var(--success-color);
+            border-radius: var(--border-radius);
         }
 
         .search-result-info h3 {
             margin-top: 0;
-            color: #2E7D32;
+            color: var(--success-dark);
+            font-size: 18px;
         }
 
         .search-result-info p {
             margin-bottom: 0;
+            font-size: 15px;
         }
 
         .no-results {
-            background-color: #ffebee;
-            border-left-color: #f44336;
+            background-color: var(--danger-light);
+            border-left-color: var(--danger-color);
         }
 
         .no-results h3 {
-            color: #c62828;
+            color: var(--danger-dark);
         }
 
         /* 改行を維持するスタイル */
@@ -212,9 +289,11 @@
         /* ページネーションのスタイル */
         .pagination {
             display: flex;
-            justify-content: center;
+            justify-content: space-between;
             margin: 30px 0;
             flex-wrap: wrap;
+            gap: 8px;
+            width: 100%;
         }
 
         .pagination-item {
@@ -229,27 +308,22 @@
             height: 40px;
             border-radius: 50%;
             text-decoration: none;
-            color: #2196F3;
-            background-color: #fff;
-            border: 1px solid #ddd;
+            color: var(--primary-color);
+            background-color: var(--white);
+            border: 1px solid var(--gray-medium);
             transition: all 0.3s;
+            font-weight: 500;
         }
 
         .page-link:hover {
-            background-color: #e3f2fd;
-            border-color: #2196F3;
+            background-color: var(--primary-light);
+            border-color: var(--primary-color);
         }
 
         .page-link.active {
-            background-color: #2196F3;
-            color: white;
-            border-color: #2196F3;
-        }
-
-        .page-item.disabled .page-link {
-            color: #ccc;
-            pointer-events: none;
-            background-color: #f5f5f5;
+            background-color: var(--primary-color);
+            color: var(--white);
+            border-color: var(--primary-color);
         }
 
         .pagination-nav {
@@ -259,232 +333,294 @@
             padding: 8px 16px;
             border-radius: 20px;
             text-decoration: none;
-            color: #2196F3;
-            background-color: #fff;
-            border: 1px solid #ddd;
+            color: var(--primary-color);
+            background-color: var(--white);
+            border: 1px solid var(--gray-medium);
             transition: all 0.3s;
+            font-weight: 500;
         }
 
         .pagination-nav:hover {
-            background-color: #e3f2fd;
-            border-color: #2196F3;
+            background-color: var(--primary-light);
+            border-color: var(--primary-color);
         }
 
         .pagination-nav.disabled {
-            color: #ccc;
+            color: var(--gray-dark);
             pointer-events: none;
-            background-color: #f5f5f5;
+            background-color: var(--gray-light);
+        }
+
+        .ellipsis {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 40px;
+            height: 40px;
+            color: var(--gray-dark);
+        }
+
+        /* レスポンシブ対応 */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .container {
+                padding: 16px;
+            }
+
+            .action-button {
+                padding: 8px 16px;
+                font-size: 14px;
+                min-width: 100px;
+            }
+        }
+
+        /* スクロールボタン */
+        .scroll-buttons {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .scroll-button {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: rgba(0, 0, 0, 0.3);
+            color: white;
+            border: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-size: 24px;
+            transition: background-color 0.3s;
+        }
+
+        .scroll-button:hover {
+            background-color: rgba(0, 0, 0, 0.5);
         }
     </style>
-
 </head>
 
 <body>
-    <!-- ページタイトル -->
-    <h1>設備一覧</h1>
+    <div class="container">
+        <!-- ページタイトル -->
+        <h1>設備一覧</h1>
 
-    <!-- 検索結果表示（検索パラメータがある場合のみ表示） -->
-    <div th:if="${searchType != null}" class="search-result-info"
-        th:classappend="${equipments.isEmpty() ? 'no-results' : ''}">
-        <h3 th:if="${!equipments.isEmpty()}">検索結果</h3>
-        <h3 th:if="${equipments.isEmpty()}">検索結果がありません</h3>
-        <p th:if="${searchType == 'location' && searchLocation != null && !searchLocation.isEmpty()}">
-            設置場所: <span th:text="${locationName ?: '不明'}"></span>
-        </p>
-        <p th:if="${searchType == 'name' && searchName != null && !searchName.isEmpty()}">
-            品名に "<span th:text="${searchName}"></span>" を含む
-        </p>
-        <p th:if="${searchType == 'both'}">
-            <span th:if="${searchLocation != null && !searchLocation.isEmpty()}">
+        <!-- 検索結果表示（検索パラメータがある場合のみ表示） -->
+        <div th:if="${searchType != null}" class="search-result-info"
+            th:classappend="${equipments.isEmpty() ? 'no-results' : ''}">
+            <h3 th:if="${!equipments.isEmpty()}">検索結果</h3>
+            <h3 th:if="${equipments.isEmpty()}">検索結果がありません</h3>
+            <p th:if="${searchType == 'location' && searchLocation != null && !searchLocation.isEmpty()}">
                 設置場所: <span th:text="${locationName ?: '不明'}"></span>
-            </span>
-            <span th:if="${searchName != null && !searchName.isEmpty()}">
-                <span th:if="${searchLocation != null && !searchLocation.isEmpty()}"> かつ </span>
+            </p>
+            <p th:if="${searchType == 'name' && searchName != null && !searchName.isEmpty()}">
                 品名に "<span th:text="${searchName}"></span>" を含む
-            </span>
-        </p>
-        <p th:if="${!equipments.isEmpty()}" th:text="${page.totalElements} + '件の設備が見つかりました'"></p>
-    </div>
+            </p>
+            <p th:if="${searchType == 'both'}">
+                <span th:if="${searchLocation != null && !searchLocation.isEmpty()}">
+                    設置場所: <span th:text="${locationName ?: '不明'}"></span>
+                </span>
+                <span th:if="${searchName != null && !searchName.isEmpty()}">
+                    <span th:if="${searchLocation != null && !searchLocation.isEmpty()}"> かつ </span>
+                    品名に "<span th:text="${searchName}"></span>" を含む
+                </span>
+            </p>
+            <p th:if="${!equipments.isEmpty()}" th:text="${page.totalElements} + '件の設備が見つかりました'"></p>
+        </div>
 
-    <!-- 上部操作ボタン群 -->
-    <div class="top-buttons">
-        <!-- 検索ボタン -->
-        <a th:href="@{/equipment/search}">
-            <button type="button" class="action-button search-button">検索</button>
-        </a>
-        <!-- 新規登録ボタン -->
-        <a th:href="@{/equipment/create-form}">
-            <button type="button" class="action-button register-button">(＋) 新規登録</button>
-        </a>
-        <!-- 編集ボタン -->
-        <button type="button" id="editButton" class="action-button edit-button"
-            onclick="editSelectedEquipment()">編集</button>
-        <!-- 一括削除ボタン -->
-        <a th:href="@{/equipment/delete-mode}">
-            <button type="button" class="action-button delete-mode-button">(－) 一括削除</button>
-        </a>
-    </div>
+        <!-- 上部操作ボタン群 -->
+        <div class="top-buttons">
+            <!-- 検索ボタン -->
+            <a th:href="@{/equipment/search(location=${searchLocation}, name=${searchName})}">
+                <button type="button" class="action-button search-button">検索</button>
+            </a>
+            <!-- 新規登録ボタン -->
+            <a th:href="@{/equipment/create-form}">
+                <button type="button" class="action-button register-button">(＋) 新規登録</button>
+            </a>
+            <!-- 編集ボタン -->
+            <button type="button" id="editButton" class="action-button edit-button"
+                onclick="editSelectedEquipment()">編集</button>
+            <!-- 一括削除ボタン -->
+            <a th:href="@{/equipment/delete-mode}">
+                <button type="button" class="action-button delete-mode-button">(－) 一括削除</button>
+            </a>
+        </div>
 
-    <!-- エラーメッセージの吹き出し -->
-    <div class="radio-container">
+        <!-- エラーメッセージの吹き出し -->
         <div id="errorTooltip" class="error-tooltip">編集したい設備を選択してください</div>
+
+        <!-- 設備一覧テーブル -->
+        <div class="table-responsive" th:if="${!equipments.isEmpty()}">
+            <table>
+                <thead>
+                    <tr>
+                        <!-- テーブルヘッダー定義 -->
+                        <th>選択</th>
+                        <th>管理番号</th>
+                        <th>品名</th>
+                        <th>型番</th>
+                        <th>メーカー</th>
+                        <th>仕様</th>
+                        <th>購入日</th>
+                        <th>耐用年数 (年)</th>
+                        <th>減価償却</th>
+                        <th>使用不能</th>
+                        <th>貸出可能</th>
+                        <th>設置場所</th>
+                        <th>使用期限</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- 
+                    設備一覧のデータ表示
+                    各設備の状態に応じて行のCSSクラスを動的に設定：
+                    - broken-equipment: 故障設備  
+                    - depreciation-completed: 減価償却完了設備
+                    -->
+                    <tr th:each="equipment : ${equipments}"
+                        th:class="${equipment.isBroken ? 'broken-equipment' : 
+                                (equipment.elapsedYears != null and equipment.lifespanYears != null and equipment.elapsedYears >= equipment.lifespanYears) ? 'depreciation-completed' : ''}">
+
+                        <!-- ラジオボタン -->
+                        <td>
+                            <input type="radio" name="selectedEquipment" th:value="${equipment.id}" class="radio-select"
+                                onclick="toggleRadioSelection(this)" id="radio-equipment-${equipment.id}" aria-label="設備を選択">
+                        </td>
+                        <!-- 管理番号 -->
+                        <td th:text="${equipment.managementNumber}"></td>
+                        <!-- 品名 -->
+                        <td th:text="${equipment.name}"></td>
+                        <!-- 型番 -->
+                        <td th:text="${equipment.modelNumber}"></td>
+                        <!-- メーカー -->
+                        <td th:text="${equipment.manufacturer}"></td>
+                        <!-- 仕様 -->
+                        <td class="preserve-linebreaks" th:text="${equipment.specification ?: '-'}"></td>
+                        <!-- 購入日 -->
+                        <td th:text="${equipment.purchaseDate}"></td>
+                        <!-- 耐用年数 -->
+                        <td th:text="${equipment.lifespanYears}"></td>
+
+                        <!-- 
+                        減価償却状況の表示
+                        減価償却完了の場合は特別なスタイルを適用
+                        -->
+                        <td
+                            th:class="${equipment.elapsedYears != null and equipment.lifespanYears != null and equipment.elapsedYears >= equipment.lifespanYears ? 'depreciation-completed-cell' : ''}">
+                            <span th:if="${equipment.elapsedYears != null and equipment.lifespanYears != null}">
+                                <span th:text="${equipment.elapsedYears >= equipment.lifespanYears ? '終了' : ''}"></span>
+                            </span>
+                            <span th:if="${equipment.elapsedYears == null or equipment.lifespanYears == null}">-</span>
+                        </td>
+
+                        <!-- 使用不能フラグ（故障状態）〇マーク表示 -->
+                        <td class="circle" th:text="${equipment.isBroken} ? '〇' : ''"></td>
+                        <!-- 貸出可能フラグ 〇マーク表示 -->
+                        <td class="circle" th:text="${equipment.isAvailableForLoan} ? '〇' : ''"></td>
+
+                        <!-- 
+                        設置場所の表示
+                        DTOから取得した設置場所ラベルを表示
+                        -->
+                        <td th:text="${equipment.locationLabel ?: '不明'}"></td>
+
+                        <!-- 使用期限（設定されている場合のみ表示） -->
+                        <td
+                            th:text="${equipment.usageDeadline != null} ? '〜' + ${#temporals.format(equipment.usageDeadline, 'yyyy/MM/dd')} : ''">
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ページネーション -->
+        <div class="pagination" th:if="${page != null}">
+            <!-- 前へボタン -->
+            <div class="pagination-item">
+                <!-- 検索結果ページの場合 -->
+                <a th:if="${!page.first && currentUrl != null && currentUrl == '/equipment/search/results'}" 
+                th:href="@{/equipment/search/results(page=${page.number - 1}, searchType=${searchType}, location=${searchLocation}, name=${searchName})}" 
+                class="pagination-nav">
+                    前へ
+                </a>
+                <!-- 通常の一覧ページの場合 -->
+                <a th:if="${!page.first && (currentUrl == null || currentUrl != '/equipment/search/results')}" 
+                th:href="@{/equipment/list(page=${page.number - 1})}" 
+                class="pagination-nav">
+                    前へ
+                </a>
+                <span th:if="${page.first}" class="pagination-nav disabled">前へ</span>
+            </div>
+            
+            <!-- ページ番号ボタン -->
+            <div class="pagination-item" th:each="pageNumber : ${pageNumbers}">
+                <!-- 省略記号の場合 -->
+                <span th:if="${pageNumber == -1}" class="ellipsis">...</span>
+                
+                <!-- 通常のページ番号の場合 -->
+                <a th:if="${pageNumber != -1 && currentUrl != null && currentUrl == '/equipment/search/results'}" 
+                   th:href="@{/equipment/search/results(page=${pageNumber - 1}, searchType=${searchType}, location=${searchLocation}, name=${searchName})}" 
+                   th:text="${pageNumber}"
+                   th:class="${pageNumber == currentPageNumber} ? 'page-link active' : 'page-link'">
+                </a>
+                <a th:if="${pageNumber != -1 && (currentUrl == null || currentUrl != '/equipment/search/results')}" 
+                   th:href="@{/equipment/list(page=${pageNumber - 1})}" 
+                   th:text="${pageNumber}"
+                   th:class="${pageNumber == currentPageNumber} ? 'page-link active' : 'page-link'">
+                </a>
+            </div>
+            
+            <!-- 次へボタン -->
+            <div class="pagination-item">
+                <!-- 検索結果ページの場合 -->
+                <a th:if="${!page.last && currentUrl != null && currentUrl == '/equipment/search/results'}" 
+                th:href="@{/equipment/search/results(page=${page.number + 1}, searchType=${searchType}, location=${searchLocation}, name=${searchName})}" 
+                class="pagination-nav">
+                    次へ
+                </a>
+                <!-- 通常の一覧ページの場合 -->
+                <a th:if="${!page.last && (currentUrl == null || currentUrl != '/equipment/search/results')}" 
+                th:href="@{/equipment/list(page=${page.number + 1})}" 
+                class="pagination-nav">
+                    次へ
+                </a>
+                <span th:if="${page.last}" class="pagination-nav disabled">次へ</span>
+            </div>
+        </div>
+        
+        <!-- 検索画面に戻るボタン（検索結果表示時のみ表示） -->
+        <div class="top-buttons" th:if="${searchType != null}" style="justify-content: center; margin-top: 20px;">
+            <a th:href="@{/equipment/search(location=${searchLocation}, name=${searchName})}">
+                <button type="button" class="action-button search-button">検索画面に戻る</button>
+            </a>
+        </div>
+
+        <!-- 検索結果がない場合のメッセージ -->
+        <div th:if="${equipments.isEmpty() && searchType == null}" class="search-result-info no-results">
+            <h3>設備が登録されていません</h3>
+            <p>新規登録ボタンから設備を登録してください。</p>
+        </div>
     </div>
 
-    <!-- 設備一覧テーブル -->
-    <table th:if="${!equipments.isEmpty()}">
-        <thead>
-            <tr>
-                <!-- テーブルヘッダー定義 -->
-                <th>選択</th>
-                <th>管理番号</th>
-                <th>品名</th>
-                <th>型番</th>
-                <th>メーカー</th>
-                <th>仕様</th>
-                <th>購入日</th>
-                <th>耐用年数 (年)</th>
-                <th>減価償却</th>
-                <th>使用不能</th>
-                <th>貸出可能</th>
-                <th>設置場所</th>
-                <th>使用期限</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- 
-            設備一覧のデータ表示
-            各設備の状態に応じて行のCSSクラスを動的に設定：
-            - broken-equipment: 故障設備  
-            - depreciation-completed: 減価償却完了設備
-            -->
-            <tr th:each="equipment : ${equipments}"
-                th:class="${equipment.isBroken ? 'broken-equipment' : 
-                           (equipment.elapsedYears != null and equipment.lifespanYears != null and equipment.elapsedYears >= equipment.lifespanYears) ? 'depreciation-completed' : ''}">
-
-                <!-- ラジオボタン -->
-                <td>
-                    <input type="radio" name="selectedEquipment" th:value="${equipment.id}" class="radio-select"
-                        onclick="toggleRadioSelection(this)">
-                </td>
-                <!-- 管理番号 -->
-                <td th:text="${equipment.managementNumber}"></td>
-                <!-- 品名 -->
-                <td th:text="${equipment.name}"></td>
-                <!-- 型番 -->
-                <td th:text="${equipment.modelNumber}"></td>
-                <!-- メーカー -->
-                <td th:text="${equipment.manufacturer}"></td>
-                <!-- 仕様 -->
-                <td class="preserve-linebreaks" th:text="${equipment.specification ?: '-'}"></td>
-                <!-- 購入日 -->
-                <td th:text="${equipment.purchaseDate}"></td>
-                <!-- 耐用年数 -->
-                <td th:text="${equipment.lifespanYears}"></td>
-
-                <!-- 
-               減価償却状況の表示
-                減価償却完了の場合は特別なスタイルを適用
-                -->
-                <td
-                    th:class="${equipment.elapsedYears != null and equipment.lifespanYears != null and equipment.elapsedYears >= equipment.lifespanYears ? 'depreciation-completed-cell' : ''}">
-                    <span th:if="${equipment.elapsedYears != null and equipment.lifespanYears != null}">
-                        <span th:text="${equipment.elapsedYears >= equipment.lifespanYears ? '終了' : ''}"></span>
-                    </span>
-                    <span th:if="${equipment.elapsedYears == null or equipment.lifespanYears == null}">-</span>
-                </td>
-
-                <!-- 使用不能フラグ（故障状態）〇マーク表示 -->
-                <td class="circle" th:text="${equipment.isBroken} ? '〇' : ''"></td>
-                <!-- 貸出可能フラグ 〇マーク表示 -->
-                <td class="circle" th:text="${equipment.isAvailableForLoan} ? '〇' : ''"></td>
-
-                <!-- 
-                設置場所の表示
-                DTOから取得した設置場所ラベルを表示
-                -->
-                <td th:text="${equipment.locationLabel ?: '不明'}"></td>
-
-                <!-- 使用期限（設定されている場合のみ表示） -->
-                <td
-                    th:text="${equipment.usageDeadline != null} ? '〜' + ${#temporals.format(equipment.usageDeadline, 'yyyy/MM/dd')} : ''">
-                </td>
-            </tr>
-        </tbody>
-    </table>
-
-    <!-- ページネーション -->
-    <div class="pagination" th:if="${page != null}">
-        <!-- 前へボタン -->
-        <div class="pagination-item">
-            <!-- 検索結果ページの場合 -->
-            <a th:if="${!page.first && currentUrl != null && currentUrl == '/equipment/search/results'}" 
-               th:href="@{/equipment/search/results(page=${page.number - 1}, searchType=${searchType}, location=${searchLocation}, name=${searchName})}" 
-               class="pagination-nav">
-                前へ
-            </a>
-            <!-- 通常の一覧ページの場合 -->
-            <a th:if="${!page.first && (currentUrl == null || currentUrl != '/equipment/search/results')}" 
-               th:href="@{/equipment/list(page=${page.number - 1})}" 
-               class="pagination-nav">
-                前へ
-            </a>
-            <span th:if="${page.first}" class="pagination-nav disabled">前へ</span>
-        </div>
-        
-        <!-- ページ番号ボタン - 少なくとも「1」は常に表示 -->
-        <div class="pagination-item">
-            <!-- 検索結果ページの場合 -->
-            <a th:if="${currentUrl != null && currentUrl == '/equipment/search/results'}" 
-               th:href="@{/equipment/search/results(page=0, searchType=${searchType}, location=${searchLocation}, name=${searchName})}" 
-               th:class="${0 == page.number} ? 'page-link active' : 'page-link'"
-               th:text="'1'">
-            </a>
-            <!-- 通常の一覧ページの場合 -->
-            <a th:if="${currentUrl == null || currentUrl != '/equipment/search/results'}" 
-               th:href="@{/equipment/list(page=0)}" 
-               th:class="${0 == page.number} ? 'page-link active' : 'page-link'"
-               th:text="'1'">
-            </a>
-        </div>
-        
-        <!-- その他のページ番号ボタン -->
-        <div class="pagination-item" th:each="pageNumber : ${pageNumbers}" th:if="${pageNumber > 1}">
-            <!-- 検索結果ページの場合 -->
-            <a th:if="${currentUrl != null && currentUrl == '/equipment/search/results'}" 
-               th:href="@{/equipment/search/results(page=${pageNumber - 1}, searchType=${searchType}, location=${searchLocation}, name=${searchName})}" 
-               th:text="${pageNumber}"
-               th:class="${pageNumber - 1 == page.number} ? 'page-link active' : 'page-link'">
-            </a>
-            <!-- 通常の一覧ページの場合 -->
-            <a th:if="${currentUrl == null || currentUrl != '/equipment/search/results'}" 
-               th:href="@{/equipment/list(page=${pageNumber - 1})}" 
-               th:text="${pageNumber}"
-               th:class="${pageNumber - 1 == page.number} ? 'page-link active' : 'page-link'">
-            </a>
-        </div>
-        
-        <!-- 次へボタン - 常に表示し、最後のページの場合は灰色で無効化 -->
-        <div class="pagination-item">
-            <!-- 検索結果ページの場合 -->
-            <a th:if="${!page.last && currentUrl != null && currentUrl == '/equipment/search/results'}" 
-               th:href="@{/equipment/search/results(page=${page.number + 1}, searchType=${searchType}, location=${searchLocation}, name=${searchName})}" 
-               class="pagination-nav">
-                次へ
-            </a>
-            <!-- 通常の一覧ページの場合 -->
-            <a th:if="${!page.last && (currentUrl == null || currentUrl != '/equipment/search/results')}" 
-               th:href="@{/equipment/list(page=${page.number + 1})}" 
-               class="pagination-nav">
-                次へ
-            </a>
-            <span th:if="${page.last}" class="pagination-nav disabled">次へ</span>
-        </div>
-    </div>
-
-    <!-- 検索結果がない場合のメッセージ -->
-    <div th:if="${equipments.isEmpty() && searchType == null}" class="search-result-info no-results">
-        <h3>設備が登録されていません</h3>
-        <p>新規登録ボタンから設備を登録してください。</p>
+    <!-- スクロールボタン -->
+    <div class="scroll-buttons">
+        <button id="scrollTopBtn" class="scroll-button" title="一番上へ">↑</button>
+        <button id="scrollMiddleBtn" class="scroll-button" title="中間へ">◆</button>
+        <button id="scrollBottomBtn" class="scroll-button" title="一番下へ">↓</button>
     </div>
 
     <script>
@@ -494,13 +630,28 @@
             if (radio.checked && radio.hasAttribute('data-was-checked')) {
                 radio.checked = false;
                 radio.removeAttribute('data-was-checked');
+                // 行の選択状態も解除
+                const row = radio.closest('tr');
+                if (row) {
+                    row.classList.remove('selected');
+                }
             } else {
                 // 他のラジオボタンからdata-was-checked属性を削除
                 document.querySelectorAll('input[name="selectedEquipment"]').forEach(function (r) {
                     r.removeAttribute('data-was-checked');
+                    // 他の行の選択状態も解除
+                    const otherRow = r.closest('tr');
+                    if (otherRow) {
+                        otherRow.classList.remove('selected');
+                    }
                 });
                 // 選択したラジオボタンにdata-was-checked属性を追加
                 radio.setAttribute('data-was-checked', 'true');
+                // 行を選択状態にする
+                const row = radio.closest('tr');
+                if (row) {
+                    row.classList.add('selected');
+                }
             }
         }
 
@@ -523,6 +674,57 @@
                 }, 3000);
             }
         }
+
+        // 行クリックで選択する処理
+        document.addEventListener('DOMContentLoaded', function() {
+            const rows = document.querySelectorAll('tbody tr');
+            
+            rows.forEach(function(row) {
+                row.addEventListener('click', function(event) {
+                    // ラジオボタン自体をクリックした場合は、ラジオボタンのイベントハンドラに任せる
+                    if (event.target.type === 'radio') {
+                        return;
+                    }
+                    
+                    // 行内のラジオボタンを取得
+                    const radio = row.querySelector('input[type="radio"]');
+                    if (radio) {
+                        // ラジオボタンをクリックしたのと同じ効果を与える
+                        radio.checked = !radio.checked || !radio.hasAttribute('data-was-checked');
+                        toggleRadioSelection(radio);
+                    }
+                });
+            });
+
+            // スクロールボタンの処理
+            const scrollTopBtn = document.getElementById('scrollTopBtn');
+            const scrollMiddleBtn = document.getElementById('scrollMiddleBtn');
+            const scrollBottomBtn = document.getElementById('scrollBottomBtn');
+
+            // 一番上へスクロール
+            scrollTopBtn.addEventListener('click', function() {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            });
+
+            // 中間へスクロール
+            scrollMiddleBtn.addEventListener('click', function() {
+                window.scrollTo({
+                    top: document.body.scrollHeight / 2,
+                    behavior: 'smooth'
+                });
+            });
+
+            // 一番下へスクロール
+            scrollBottomBtn.addEventListener('click', function() {
+                window.scrollTo({
+                    top: document.body.scrollHeight,
+                    behavior: 'smooth'
+                });
+            });
+        });
     </script>
 </body>
 

@@ -1,34 +1,66 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
 <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>設備検索</title>
     <style>
+        :root {
+            --primary-color: #1976d2;
+            --primary-light: #e3f2fd;
+            --primary-dark: #0d47a1;
+            --success-color: #4CAF50;
+            --success-light: #e8f5e9;
+            --success-dark: #2E7D32;
+            --danger-color: #f44336;
+            --danger-light: #ffebee;
+            --danger-dark: #c62828;
+            --warning-color: #ff9800;
+            --gray-light: #f5f5f5;
+            --gray-medium: #e0e0e0;
+            --gray-dark: #757575;
+            --text-primary: #212121;
+            --text-secondary: #757575;
+            --white: #ffffff;
+            --shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            --border-radius: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'メイリオ', sans-serif;
             margin: 0;
             padding: 20px;
-            background-color: #f5f5f5;
+            background-color: #f8f9fa;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
+            font-size: 16px;
+            line-height: 1.6;
+            color: var(--text-primary);
         }
 
         h1 {
-            color: #333;
-            border-bottom: 2px solid #2196F3;
+            color: var(--primary-dark);
+            border-bottom: 2px solid var(--primary-color);
             padding-bottom: 10px;
             width: 100%;
             text-align: center;
             margin-bottom: 30px;
+            font-size: 28px;
         }
 
         .search-container {
-            background-color: white;
+            background-color: var(--white);
             padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
             width: 100%;
             max-width: 800px;
             margin: 0 auto;
@@ -39,37 +71,40 @@
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
 
         label {
             display: block;
             margin-bottom: 8px;
-            font-weight: bold;
-            color: #555;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 16px;
         }
 
         input[type="text"], 
         select {
             width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            padding: 12px;
+            border: 1px solid var(--gray-medium);
+            border-radius: var(--border-radius);
             font-size: 16px;
             box-sizing: border-box;
+            color: var(--text-primary);
         }
 
         input[type="text"]:focus, 
         select:focus {
             outline: none;
-            border-color: #2196F3;
+            border-color: var(--primary-color);
             box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
         }
 
         .search-options {
             display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 24px;
+            margin-bottom: 24px;
         }
 
         .search-option {
@@ -79,40 +114,68 @@
 
         .search-option input[type="radio"] {
             margin-right: 8px;
+            width: 18px;
+            height: 18px;
         }
 
         .button-container {
             text-align: center;
-            margin-top: 30px;
+            margin-top: 32px;
+            display: flex;
+            justify-content: center;
+            gap: 30px;
         }
 
         .btn-search {
-            background-color: #2196F3;
-            color: white;
-            padding: 12px 30px;
+            background-color: var(--primary-color);
+            color: var(--white);
+            padding: 12px 32px;
             border: none;
-            border-radius: 6px;
+            border-radius: var(--border-radius);
             font-size: 16px;
+            font-weight: 500;
             cursor: pointer;
             transition: background-color 0.3s;
+            box-shadow: var(--shadow);
         }
 
         .btn-search:hover {
-            background-color: #0b7dda;
+            background-color: var(--primary-dark);
+        }
+
+        .btn-back {
+            background-color: var(--gray-medium);
+            color: var(--text-primary);
+            padding: 12px 32px;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            box-shadow: var(--shadow);
+            margin-right: 30px;
+        }
+
+        .btn-back:hover {
+            background-color: var(--gray-dark);
+            color: var(--white);
         }
 
         .search-description {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: #e3f2fd;
-            border-radius: 6px;
-            font-size: 14px;
-            color: #555;
+            margin-top: 24px;
+            padding: 16px;
+            background-color: var(--primary-light);
+            border-radius: var(--border-radius);
+            font-size: 15px;
+            color: var(--text-primary);
         }
 
         .search-description h3 {
             margin-top: 0;
-            color: #2196F3;
+            color: var(--primary-color);
+            font-size: 18px;
+            margin-bottom: 12px;
         }
 
         .search-description ul {
@@ -121,7 +184,26 @@
         }
 
         .search-description li {
-            margin-bottom: 5px;
+            margin-bottom: 6px;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 16px;
+            }
+
+            .search-container {
+                padding: 20px;
+            }
+
+            .search-options {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
         }
     </style>
 </head>
@@ -130,36 +212,25 @@
         <h1>設備検索</h1>
 
         <form th:action="@{/equipment/search/results}" method="get" class="search-form">
-            <div class="search-options">
-                <div class="search-option">
-                    <input type="radio" id="searchTypeLocation" name="searchType" value="location" checked>
-                    <label for="searchTypeLocation">設置場所で検索</label>
-                </div>
-                <div class="search-option">
-                    <input type="radio" id="searchTypeName" name="searchType" value="name">
-                    <label for="searchTypeName">品名で検索</label>
-                </div>
-                <div class="search-option">
-                    <input type="radio" id="searchTypeBoth" name="searchType" value="both">
-                    <label for="searchTypeBoth">設置場所と品名で検索</label>
-                </div>
-            </div>
-
             <div class="form-group">
                 <label for="locationSelect">設置場所</label>
                 <select id="locationSelect" name="location">
                     <option value="" selected>未選択（すべての設置場所）</option>
                     <option th:each="loc : ${locationOptions}" th:value="${loc}"
-                            th:text="${@locationRepository.findById(T(java.lang.Integer).parseInt(loc)).orElse(new com.example.equipmentmanagement.entity.Location()).getName()}"></option>
+                            th:text="${@locationRepository.findById(T(java.lang.Integer).parseInt(loc)).orElse(new com.example.equipmentmanagement.entity.Location()).getName()}"
+                            th:selected="${location != null && location == loc}"></option>
                 </select>
             </div>
 
             <div class="form-group">
                 <label for="nameInput">品名（部分一致検索可能）</label>
-                <input type="text" id="nameInput" name="name" placeholder="検索したい品名を入力">
+                <input type="text" id="nameInput" name="name" placeholder="検索したい品名を入力" th:value="${name}">
             </div>
 
             <div class="button-container">
+                <a th:href="@{/equipment/list}">
+                    <button type="button" class="btn-back">一覧に戻る</button>
+                </a>
                 <button type="submit" class="btn-search">検索</button>
             </div>
         </form>
@@ -170,40 +241,9 @@
                 <li>設置場所のみ、品名のみ、または両方を指定して検索できます</li>
                 <li>設置場所を「未選択」にすると、すべての設置場所から検索します</li>
                 <li>品名は部分一致で検索できます（例：「パソコン」で「ノートパソコン」「デスクトップパソコン」などがヒット）</li>
-                <li>検索タイプを選択してから検索条件を入力してください</li>
+                <li>両方の条件を指定すると、両方の条件に一致する設備が検索されます</li>
             </ul>
         </div>
     </div>
-
-    <script>
-        // 検索タイプによって入力フィールドの有効/無効を切り替える
-        const searchTypeLocation = document.getElementById('searchTypeLocation');
-        const searchTypeName = document.getElementById('searchTypeName');
-        const searchTypeBoth = document.getElementById('searchTypeBoth');
-        const locationSelect = document.getElementById('locationSelect');
-        const nameInput = document.getElementById('nameInput');
-
-        function updateFieldState() {
-            if (searchTypeLocation.checked) {
-                locationSelect.disabled = false;
-                nameInput.disabled = true;
-                nameInput.value = '';
-            } else if (searchTypeName.checked) {
-                locationSelect.disabled = true;
-                locationSelect.value = '';
-                nameInput.disabled = false;
-            } else if (searchTypeBoth.checked) {
-                locationSelect.disabled = false;
-                nameInput.disabled = false;
-            }
-        }
-
-        searchTypeLocation.addEventListener('change', updateFieldState);
-        searchTypeName.addEventListener('change', updateFieldState);
-        searchTypeBoth.addEventListener('change', updateFieldState);
-
-        // 初期状態を設定
-        window.addEventListener('load', updateFieldState);
-    </script>
 </body>
 </html> 

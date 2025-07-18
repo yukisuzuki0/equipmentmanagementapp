@@ -1,0 +1,1 @@
+web: java -Xms512m -Xmx1024m -XX:+UseG1GC -jar target/equipmentmanagement-0.0.1-SNAPSHOT.jar 

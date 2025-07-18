@@ -138,6 +138,16 @@
             text-align: center;
         }
 
+        /* 行をクリック可能にするスタイル */
+        tbody tr {
+            cursor: pointer;
+        }
+
+        /* 選択された行のスタイル */
+        tr.selected {
+            background-color: rgba(244, 67, 54, 0.1) !important;
+        }
+
         /* 減価償却完了の行のスタイル */
         .depreciation-completed {
             background-color: #e3f2fd !important;
@@ -199,9 +209,10 @@
         /* ページネーションのスタイル */
         .pagination {
             display: flex;
-            justify-content: center;
+            justify-content: space-between;
             margin: 30px 0 80px 0; /* 下部に余裕を持たせる */
             flex-wrap: wrap;
+            width: 100%;
         }
 
         .pagination-item {
@@ -261,6 +272,36 @@
             color: #ccc;
             pointer-events: none;
             background-color: #f5f5f5;
+        }
+
+        /* スクロールボタン */
+        .scroll-buttons {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .scroll-button {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: rgba(0, 0, 0, 0.3);
+            color: white;
+            border: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-size: 24px;
+            transition: background-color 0.3s;
+        }
+
+        .scroll-button:hover {
+            background-color: rgba(0, 0, 0, 0.5);
         }
     </style>
 </head>
@@ -334,23 +375,20 @@
                     <span th:if="${page.first}" class="pagination-nav disabled">前へ</span>
                 </div>
                 
-                <!-- ページ番号ボタン - 少なくとも「1」は常に表示 -->
-                <div class="pagination-item">
-                    <a th:href="@{/equipment/delete-mode(page=0)}" 
-                       th:class="${0 == page.number} ? 'page-link active' : 'page-link'"
-                       th:text="'1'">
-                    </a>
-                </div>
-                
-                <!-- その他のページ番号ボタン -->
-                <div class="pagination-item" th:each="pageNumber : ${pageNumbers}" th:if="${pageNumber > 1}">
-                    <a th:href="@{/equipment/delete-mode(page=${pageNumber - 1})}" 
+                <!-- ページ番号ボタン -->
+                <div class="pagination-item" th:each="pageNumber : ${pageNumbers}">
+                    <!-- 省略記号の場合 -->
+                    <span th:if="${pageNumber == -1}" class="ellipsis">...</span>
+                    
+                    <!-- 通常のページ番号の場合 -->
+                    <a th:if="${pageNumber != -1}" 
+                       th:href="@{/equipment/delete-mode(page=${pageNumber - 1})}" 
                        th:text="${pageNumber}"
                        th:class="${pageNumber - 1 == page.number} ? 'page-link active' : 'page-link'">
                     </a>
                 </div>
                 
-                <!-- 次へボタン - 常に表示し、最後のページの場合は灰色で無効化 -->
+                <!-- 次へボタン -->
                 <div class="pagination-item">
                     <a th:if="${!page.last}" 
                        th:href="@{/equipment/delete-mode(page=${page.number + 1})}" 
@@ -407,6 +445,13 @@
             </div>
         </div>
     </form>
+
+    <!-- スクロールボタン -->
+    <div class="scroll-buttons">
+        <button id="scrollTopBtn" class="scroll-button" title="一番上へ">↑</button>
+        <button id="scrollMiddleBtn" class="scroll-button" title="中間へ">◆</button>
+        <button id="scrollBottomBtn" class="scroll-button" title="一番下へ">↓</button>
+    </div>
 
     <script>
         function showDeleteConfirmation() {
@@ -523,6 +568,87 @@
         function hideDeleteConfirmation() {
             document.getElementById('confirmationModal').style.display = 'none';
         }
+
+        // 行クリックでチェックボックスを切り替える処理
+        document.addEventListener('DOMContentLoaded', function() {
+            const rows = document.querySelectorAll('tbody tr');
+            
+            rows.forEach(function(row) {
+                row.addEventListener('click', function(event) {
+                    // チェックボックス自体をクリックした場合は、チェックボックスのイベントハンドラに任せる
+                    if (event.target.type === 'checkbox') {
+                        return;
+                    }
+                    
+                    // 行内のチェックボックスを取得
+                    const checkbox = row.querySelector('input[type="checkbox"]');
+                    if (checkbox) {
+                        // チェックボックスの状態を反転
+                        checkbox.checked = !checkbox.checked;
+                        
+                        // 行の選択状態を更新
+                        if (checkbox.checked) {
+                            row.classList.add('selected');
+                        } else {
+                            row.classList.remove('selected');
+                        }
+                    }
+                });
+            });
+
+            // チェックボックスの状態変更時に行の選択状態も更新
+            const checkboxes = document.querySelectorAll('input[name="selectedIds"]');
+            checkboxes.forEach(function(checkbox) {
+                checkbox.addEventListener('change', function() {
+                    const row = this.closest('tr');
+                    if (row) {
+                        if (this.checked) {
+                            row.classList.add('selected');
+                        } else {
+                            row.classList.remove('selected');
+                        }
+                    }
+                });
+                
+                // 初期状態の設定
+                if (checkbox.checked) {
+                    const row = checkbox.closest('tr');
+                    if (row) {
+                        row.classList.add('selected');
+                    }
+                }
+            });
+
+            // スクロールボタンの処理
+            const scrollTopBtn = document.getElementById('scrollTopBtn');
+            const scrollMiddleBtn = document.getElementById('scrollMiddleBtn');
+            const scrollBottomBtn = document.getElementById('scrollBottomBtn');
+
+            // 一番上へスクロール
+            scrollTopBtn.addEventListener('click', function() {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            });
+
+            // 中間へスクロール
+            scrollMiddleBtn.addEventListener('click', function() {
+                const middle = document.body.scrollHeight / 2;
+                window.scrollTo({
+                    top: middle,
+                    behavior: 'smooth'
+                });
+            });
+
+            // 一番下へスクロール
+            scrollBottomBtn.addEventListener('click', function() {
+                window.scrollTo({
+                    top: document.body.scrollHeight,
+                    behavior: 'smooth'
+                });
+            });
+        });
     </script>
 </body>
 

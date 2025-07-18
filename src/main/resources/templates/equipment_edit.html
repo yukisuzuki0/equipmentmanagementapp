@@ -1,368 +1,431 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
 <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>設備編集</title>
     <style>
+        :root {
+            --primary-color: #1976d2;
+            --primary-light: #e3f2fd;
+            --primary-dark: #0d47a1;
+            --success-color: #4CAF50;
+            --success-light: #e8f5e9;
+            --success-dark: #2E7D32;
+            --danger-color: #f44336;
+            --danger-light: #ffebee;
+            --danger-dark: #c62828;
+            --warning-color: #ff9800;
+            --gray-light: #f5f5f5;
+            --gray-medium: #e0e0e0;
+            --gray-dark: #757575;
+            --text-primary: #212121;
+            --text-secondary: #757575;
+            --white: #ffffff;
+            --shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            --border-radius: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f5f5f5;
-            display: flex;
-            justify-content: center;
+            font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'メイリオ', sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background-color: #f8f9fa;
+            padding: 20px;
+            font-size: 16px;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: var(--white);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 24px;
         }
 
         h1 {
-            color: #333;
-            border-bottom: 2px solid #4CAF50;
-            padding-bottom: 10px;
+            font-size: 28px;
+            margin-bottom: 24px;
+            color: var(--primary-dark);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 8px;
         }
 
-        .form-container {
-            background-color: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            max-width: 800px;
-            width: 100%;
+        form {
+            margin-top: 20px;
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        .form-group {
             margin-bottom: 20px;
         }
 
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-primary);
         }
 
-        th {
-            background-color: #f8f9fa;
-            font-weight: bold;
-            width: 180px;
-            color: #555;
-        }
-
-        input[type="text"], 
-        input[type="number"], 
-        input[type="date"], 
-        select,
-        textarea {
+        input[type="text"],
+        input[type="number"],
+        textarea,
+        select {
             width: 100%;
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-            box-sizing: border-box;
+            padding: 12px;
+            border: 1px solid var(--gray-medium);
+            border-radius: var(--border-radius);
+            font-size: 16px;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
         }
 
         textarea {
-            min-height: 100px;
+            height: 100px;
             resize: vertical;
         }
 
-        input[type="text"]:focus, 
-        input[type="number"]:focus, 
-        input[type="date"]:focus, 
-        select:focus,
-        textarea:focus {
-            outline: none;
-            border-color: #4CAF50;
-            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
-        }
-
-        input[type="checkbox"] {
-            transform: scale(1.2);
-            margin-right: 8px;
-        }
-
-        .date-inputs {
+        .date-group {
             display: flex;
             gap: 10px;
             align-items: center;
         }
 
-        .date-inputs input {
-            width: 80px;
-            text-align: center;
+        .date-group select {
+            width: auto;
         }
 
-        .date-inputs span {
-            font-weight: bold;
-            color: #666;
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
         }
 
-        .button-container {
-            text-align: center;
+        .checkbox-group input[type="checkbox"] {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: space-between;
             margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #eee;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s;
         }
 
         .btn-primary {
-            background-color: #4CAF50;
-            color: white;
-            padding: 12px 30px;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            cursor: pointer;
-            margin-right: 15px;
-            transition: background-color 0.3s;
+            background-color: var(--primary-color);
+            color: var(--white);
         }
 
         .btn-primary:hover {
-            background-color: #45a049;
+            background-color: var(--primary-dark);
         }
 
         .btn-secondary {
-            background-color: #6c757d;
-            color: white;
-            padding: 12px 30px;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            text-decoration: none;
-            display: inline-block;
-            cursor: pointer;
-            transition: background-color 0.3s;
+            background-color: var(--gray-medium);
+            color: var(--text-primary);
         }
 
         .btn-secondary:hover {
-            background-color: #5a6268;
-            text-decoration: none;
-            color: white;
+            background-color: var(--gray-dark);
+            color: var(--white);
         }
 
         .required {
-            color: red;
-            font-weight: bold;
+            color: var(--danger-color);
+            margin-left: 5px;
         }
 
-        .checkbox-container {
-            display: flex;
-            align-items: center;
+        .help-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 16px;
+            }
+
+            .date-group {
+                flex-wrap: wrap;
+            }
+
+            .button-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .btn {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="form-container">
+    <div class="container">
         <h1>設備編集</h1>
-
-        <form th:action="@{/equipment/update}" th:object="${equipmentForm}" method="post">
+        
+        <form th:action="@{/equipment/update}" method="post" th:object="${equipmentForm}">
             <input type="hidden" th:field="*{id}" />
-            <input type="hidden" th:field="*{categoryCode}" id="hiddenCategoryCode" />
-            <input type="hidden" th:field="*{itemCode}" id="hiddenItemCode" />
-            <input type="hidden" th:field="*{subcategoryId}" id="hiddenSubcategoryId" />
-            <table>
-                <tr>
-                    <th>管理番号 <span class="required">*</span></th>
-                    <td><input type="text" th:field="*{managementNumber}" required /></td>
-                </tr>
-                <tr>
-                    <th>メインカテゴリー <span class="required">*</span></th>
-                    <td>
-                        <select id="categorySelect" required>
-                            <option value="" disabled>選択してください</option>
-                            <option th:each="cat : ${categoryOptions}" th:value="${cat.code}"
-                                    th:text="${cat.label}"></option>
-                        </select>
-                    </td>
-                </tr>
-                <tr>
-                    <th>サブカテゴリー <span class="required">*</span></th>
-                    <td>
-                        <select id="itemSelect" required>
-                            <option value="" disabled>選択してください</option>
-                        </select>
-                    </td>
-                </tr>
-                <tr>
-                    <th>品名 <span class="required">*</span></th>
-                    <td><input type="text" th:field="*{name}" required /></td>
-                </tr>
-                <tr>
-                    <th>型番</th>
-                    <td><input type="text" th:field="*{modelNumber}" /></td>
-                </tr>
-                <tr>
-                    <th>メーカー</th>
-                    <td><input type="text" th:field="*{manufacturer}" /></td>
-                </tr>
-                <tr>
-                    <th>仕様</th>
-                    <td><textarea th:field="*{specification}"></textarea></td>
-                </tr>
-                <tr>
-                    <th>取得価格 <span class="required">*</span></th>
-                    <td><input type="number" th:field="*{cost}" step="0.01" required /></td>
-                </tr>
-                <tr>
-                    <th>購入日 <span class="required">*</span></th>
-                    <td>
-                        <div class="date-inputs">
-                            <input type="number" name="purchaseYear" placeholder="年" required min="1900" max="2100" id="purchaseYear">
-                            <span>年</span>
-                            <input type="number" name="purchaseMonth" placeholder="月" required min="1" max="12" id="purchaseMonth">
-                            <span>月</span>
-                            <input type="number" name="purchaseDay" placeholder="日" required min="1" max="31" id="purchaseDay">
-                            <span>日</span>
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <th>数量 <span class="required">*</span></th>
-                    <td><input type="number" th:field="*{quantity}" min="1" required /></td>
-                </tr>
-                <tr>
-                    <th>設置場所 <span class="required">*</span></th>
-                    <td>
-                        <select th:field="*{locationCode}" required>
-                            <option value="" disabled th:selected="${equipmentForm.locationCode == null}">選択してください</option>
-                            <option th:each="loc : ${locationOptions}" th:value="${loc}"
-                                th:text="${@locationRepository.findById(T(java.lang.Integer).parseInt(loc)).orElse(new com.example.equipmentmanagement.entity.Location()).getName()}"
-                                th:selected="${equipmentForm.locationCode == loc}">
-                            </option>
-                        </select>
-                    </td>
-                </tr>
-                <tr>
-                    <th>使用不能</th>
-                    <td>
-                        <div class="checkbox-container">
-                            <input type="checkbox" th:field="*{isBroken}" />
-                            <label>使用できない状態です</label>
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <th>貸出可能</th>
-                    <td>
-                        <div class="checkbox-container">
-                            <input type="checkbox" th:field="*{isAvailableForLoan}" />
-                            <label>貸出が可能です</label>
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <th>使用期限</th>
-                    <td>
-                        <div class="date-inputs">
-                            <input type="number" name="usageDeadlineYear" min="1900" max="2100" placeholder="年" id="usageDeadlineYear">
-                            <span>年</span>
-                            <input type="number" name="usageDeadlineMonth" min="1" max="12" placeholder="月" id="usageDeadlineMonth">
-                            <span>月</span>
-                            <input type="number" name="usageDeadlineDay" min="1" max="31" placeholder="日" id="usageDeadlineDay">
-                            <span>日</span>
-                        </div>
-                    </td>
-                </tr>
-            </table>
-
-            <div class="button-container">
-                <button type="submit" class="btn-primary">更新</button>
-                <a th:href="@{/equipment/list}" class="btn-secondary">キャンセル</a>
+            
+            <!-- 管理番号 -->
+            <div class="form-group">
+                <label for="managementNumber">管理番号<span class="required">*</span></label>
+                <input type="text" id="managementNumber" th:field="*{managementNumber}" required>
+            </div>
+            
+            <!-- カテゴリー選択 -->
+            <div class="form-group">
+                <label for="categoryCode">メインカテゴリー<span class="required">*</span></label>
+                <select id="categoryCode" name="categoryCode" required onchange="updateSubcategories()">
+                    <option value="" disabled>選択してください</option>
+                    <option th:each="category : ${categories}" 
+                            th:value="${category.id}" 
+                            th:text="${category.name}"
+                            th:selected="${category.id == equipmentForm.subcategoryId}"></option>
+                </select>
+            </div>
+            
+            <!-- サブカテゴリー選択 -->
+            <div class="form-group">
+                <label for="subcategoryId">サブカテゴリー<span class="required">*</span></label>
+                <select id="subcategoryId" name="subcategoryId" required>
+                    <option value="" selected disabled>カテゴリーを先に選択してください</option>
+                </select>
+            </div>
+            
+            <!-- 品名 -->
+            <div class="form-group">
+                <label for="name">品名<span class="required">*</span></label>
+                <input type="text" id="name" th:field="*{name}" required>
+            </div>
+            
+            <!-- 型番 -->
+            <div class="form-group">
+                <label for="modelNumber">型番</label>
+                <input type="text" id="modelNumber" th:field="*{modelNumber}">
+            </div>
+            
+            <!-- メーカー -->
+            <div class="form-group">
+                <label for="manufacturer">メーカー</label>
+                <input type="text" id="manufacturer" th:field="*{manufacturer}">
+            </div>
+            
+            <!-- 仕様 -->
+            <div class="form-group">
+                <label for="specification">仕様</label>
+                <textarea id="specification" th:field="*{specification}"></textarea>
+                <p class="help-text">複数行入力可能です。詳細な仕様を記載してください。</p>
+            </div>
+            
+            <!-- 購入価格 -->
+            <div class="form-group">
+                <label for="cost">購入価格</label>
+                <input type="number" id="cost" th:field="*{cost}" step="0.01">
+                <p class="help-text">単位: 円（小数点以下2桁まで入力可能）</p>
+            </div>
+            
+            <!-- 購入日 -->
+            <div class="form-group">
+                <label>購入日<span class="required">*</span></label>
+                <div class="date-group">
+                    <select id="purchaseYear" name="purchaseYear" required>
+                        <option value="" disabled>年</option>
+                        <option th:each="year : ${#numbers.sequence(2000, 2030)}" th:value="${year}" th:text="${year}"></option>
+                    </select>
+                    <span>年</span>
+                    <select id="purchaseMonth" name="purchaseMonth" required>
+                        <option value="" disabled>月</option>
+                        <option th:each="month : ${#numbers.sequence(1, 12)}" th:value="${month}" th:text="${month}"></option>
+                    </select>
+                    <span>月</span>
+                    <select id="purchaseDay" name="purchaseDay" required>
+                        <option value="" disabled>日</option>
+                        <option th:each="day : ${#numbers.sequence(1, 31)}" th:value="${day}" th:text="${day}"></option>
+                    </select>
+                    <span>日</span>
+                </div>
+            </div>
+            
+            <!-- 数量 -->
+            <div class="form-group">
+                <label for="quantity">数量<span class="required">*</span></label>
+                <input type="number" id="quantity" th:field="*{quantity}" value="1" min="1" required>
+            </div>
+            
+            <!-- 設置場所 -->
+            <div class="form-group">
+                <label for="locationCode">設置場所<span class="required">*</span></label>
+                <select id="locationCode" th:field="*{locationCode}" required>
+                    <option value="" disabled>選択してください</option>
+                    <option th:each="loc : ${locationOptions}" th:value="${loc}"
+                            th:text="${@locationRepository.findById(T(java.lang.Integer).parseInt(loc)).orElse(new com.example.equipmentmanagement.entity.Location()).getName()}"></option>
+                </select>
+            </div>
+            
+            <!-- 耐用年数の表示を削除 -->
+            
+            <!-- 使用期限 -->
+            <div class="form-group">
+                <label>使用期限（オプション）</label>
+                <div class="date-group">
+                    <select id="usageDeadlineYear" name="usageDeadlineYear">
+                        <option value="">年</option>
+                        <option th:each="year : ${#numbers.sequence(2000, 2050)}" th:value="${year}" th:text="${year}"></option>
+                    </select>
+                    <span>年</span>
+                    <select id="usageDeadlineMonth" name="usageDeadlineMonth">
+                        <option value="">月</option>
+                        <option th:each="month : ${#numbers.sequence(1, 12)}" th:value="${month}" th:text="${month}"></option>
+                    </select>
+                    <span>月</span>
+                    <select id="usageDeadlineDay" name="usageDeadlineDay">
+                        <option value="">日</option>
+                        <option th:each="day : ${#numbers.sequence(1, 31)}" th:value="${day}" th:text="${day}"></option>
+                    </select>
+                    <span>日</span>
+                </div>
+                <p class="help-text">使用期限が設定されている場合に入力してください。</p>
+            </div>
+            
+            <!-- 使用不能フラグ -->
+            <div class="checkbox-group">
+                <input type="checkbox" id="isBroken" th:field="*{isBroken}">
+                <label for="isBroken">使用不能（故障中）</label>
+            </div>
+            
+            <!-- 貸出可能フラグ -->
+            <div class="checkbox-group">
+                <input type="checkbox" id="isAvailableForLoan" th:field="*{isAvailableForLoan}">
+                <label for="isAvailableForLoan">貸出可能</label>
+            </div>
+            
+            <!-- ボタングループ -->
+            <div class="button-group">
+                <a th:href="@{/equipment/list}">
+                    <button type="button" class="btn btn-secondary">キャンセル</button>
+                </a>
+                <button type="submit" class="btn btn-primary">更新</button>
             </div>
         </form>
     </div>
 
-<script th:inline="javascript">
-    /*<![CDATA[*/
-    const currentCategoryCode = /*[[${equipmentForm.categoryCode}]]*/ null;
-    const currentItemCode = /*[[${equipmentForm.itemCode}]]*/ null;
-    const currentSubcategoryId = /*[[${equipmentForm.subcategoryId}]]*/ null;
-    const currentPurchaseDate = /*[[${equipmentForm.purchaseDate}]]*/ null;
-    const currentUsageDeadline = /*[[${equipmentForm.usageDeadline}]]*/ null;
+    <script th:inline="javascript">
+        // カテゴリーとサブカテゴリーのマッピング
+        const categorySubcategoryMap = /*[[${categoryItemMap}]]*/ {};
+        const currentCategoryId = /*[[${equipmentForm.subcategoryId != null ? 
+            @subcategoryRepository.findById(equipmentForm.subcategoryId).orElse(new com.example.equipmentmanagement.entity.Subcategory()).getCategoryId() : null}]]*/ null;
+        const currentSubcategoryId = /*[[${equipmentForm.subcategoryId}]]*/ null;
+        const currentPurchaseDate = /*[[${equipmentForm.purchaseDate}]]*/ null;
+        const currentUsageDeadline = /*[[${equipmentForm.usageDeadline}]]*/ null;
 
-    const categorySelect = document.getElementById('categorySelect');
-    const itemSelect = document.getElementById('itemSelect');
-    const hiddenCategoryCode = document.getElementById('hiddenCategoryCode');
-    const hiddenItemCode = document.getElementById('hiddenItemCode');
-    const hiddenSubcategoryId = document.getElementById('hiddenSubcategoryId');
+        // 購入日の設定
+        const purchaseYearInput = document.getElementById('purchaseYear');
+        const purchaseMonthInput = document.getElementById('purchaseMonth');
+        const purchaseDayInput = document.getElementById('purchaseDay');
 
-    // 購入日の設定
-    const purchaseYearInput = document.getElementById('purchaseYear');
-    const purchaseMonthInput = document.getElementById('purchaseMonth');
-    const purchaseDayInput = document.getElementById('purchaseDay');
-
-    // 使用期限の設定
-    const usageDeadlineYearInput = document.getElementById('usageDeadlineYear');
-    const usageDeadlineMonthInput = document.getElementById('usageDeadlineMonth');
-    const usageDeadlineDayInput = document.getElementById('usageDeadlineDay');
-
-    // カテゴリ変更時にサブカテゴリーを動的取得
-    async function updateItemOptions() {
-        const selectedCat = categorySelect.value;
+        // 使用期限の設定
+        const usageDeadlineYearInput = document.getElementById('usageDeadlineYear');
+        const usageDeadlineMonthInput = document.getElementById('usageDeadlineMonth');
+        const usageDeadlineDayInput = document.getElementById('usageDeadlineDay');
         
-        // サブカテゴリー選択をクリア
-        itemSelect.innerHTML = '<option value="" disabled>選択してください</option>';
-        
-        if (!selectedCat) {
-            hiddenCategoryCode.value = '';
-            hiddenItemCode.value = '';
-            hiddenSubcategoryId.value = '';
-            return;
-        }
-        
-        // 隠しフィールドを更新
-        hiddenCategoryCode.value = selectedCat;
-        
-        try {
-            const response = await fetch(`/equipment/api/subcategories/${selectedCat}`);
-            const subcategories = await response.json();
+        // サブカテゴリーの選択肢を更新する関数
+        function updateSubcategories() {
+            const categorySelect = document.getElementById('categoryCode');
+            const subcategorySelect = document.getElementById('subcategoryId');
+            const selectedCategoryId = categorySelect.value;
             
-            subcategories.forEach(subcategory => {
-                const option = document.createElement('option');
-                option.value = subcategory.id;
-                option.text = subcategory.name;
-                if (currentItemCode === subcategory.id || currentSubcategoryId === parseInt(subcategory.id)) {
-                    option.selected = true;
-                    hiddenItemCode.value = subcategory.id;
-                    hiddenSubcategoryId.value = subcategory.id;
-                }
-                itemSelect.appendChild(option);
-            });
-        } catch (error) {
-            console.error('サブカテゴリー取得エラー:', error);
-        }
-    }
-
-    // サブカテゴリー選択時に隠しフィールドを更新
-    itemSelect.addEventListener('change', function() {
-        hiddenItemCode.value = this.value;
-        hiddenSubcategoryId.value = this.value;
-    });
-
-    categorySelect.addEventListener('change', updateItemOptions);
-
-    // 日付文字列をパースして年月日の個別入力に設定する関数
-    function setParsedDate(dateString, yearInput, monthInput, dayInput) {
-        if (dateString) {
-            const date = new Date(dateString);
-            yearInput.value = date.getFullYear();
-            monthInput.value = date.getMonth() + 1;
-            dayInput.value = date.getDate();
-        }
-    }
-
-    // ページロード時にカテゴリ選択とサブカテゴリー選択を復元
-    window.addEventListener('load', () => {
-        if (currentCategoryCode) {
-            categorySelect.value = currentCategoryCode;
-            updateItemOptions();
+            // サブカテゴリーの選択肢をクリア
+            subcategorySelect.innerHTML = '';
+            
+            // デフォルトのオプションを追加
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.text = '選択してください';
+            defaultOption.disabled = true;
+            defaultOption.selected = true;
+            subcategorySelect.appendChild(defaultOption);
+            
+            // 選択されたカテゴリーに対応するサブカテゴリーを追加
+            if (selectedCategoryId) {
+                // サーバーから取得したサブカテゴリーの情報を使用
+                fetch(`/equipment/api/subcategories/${selectedCategoryId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        data.forEach(subcategory => {
+                            const option = document.createElement('option');
+                            option.value = subcategory.id;
+                            option.text = subcategory.name;
+                            if (currentSubcategoryId == subcategory.id) {
+                                option.selected = true;
+                            }
+                            subcategorySelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => console.error('サブカテゴリーの取得に失敗しました:', error));
+            }
         }
 
-        // 購入日を年月日の個別入力に設定
-        setParsedDate(currentPurchaseDate, purchaseYearInput, purchaseMonthInput, purchaseDayInput);
+        // 日付文字列をパースして年月日の個別入力に設定する関数
+        function setParsedDate(dateString, yearInput, monthInput, dayInput) {
+            if (dateString) {
+                const date = new Date(dateString);
+                yearInput.value = date.getFullYear();
+                monthInput.value = date.getMonth() + 1;
+                dayInput.value = date.getDate();
+            }
+        }
 
-        // 使用期限を年月日の個別入力に設定
-        setParsedDate(currentUsageDeadline, usageDeadlineYearInput, usageDeadlineMonthInput, usageDeadlineDayInput);
-    });
-    /*]]>*/
-</script>
+        // ページロード時の初期化
+        window.addEventListener('load', () => {
+            // カテゴリーを設定
+            if (currentCategoryId) {
+                const categorySelect = document.getElementById('categoryCode');
+                categorySelect.value = currentCategoryId;
+                updateSubcategories();
+            }
 
+            // 購入日を年月日の個別入力に設定
+            setParsedDate(currentPurchaseDate, purchaseYearInput, purchaseMonthInput, purchaseDayInput);
+
+            // 使用期限を年月日の個別入力に設定
+            setParsedDate(currentUsageDeadline, usageDeadlineYearInput, usageDeadlineMonthInput, usageDeadlineDayInput);
+        });
+
+        // カテゴリー変更時にサブカテゴリーを更新
+        document.getElementById('categoryCode').addEventListener('change', updateSubcategories);
+    </script>
 </body>
 </html>

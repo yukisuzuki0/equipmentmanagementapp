@@ -82,12 +82,19 @@ public class EquipmentController {
      * 
      * 設備検索画面を表示します。
      * 
+     * @param location 設置場所（オプショナル、検索結果から戻る場合に使用）
+     * @param name 品名（オプショナル、検索結果から戻る場合に使用）
      * @param model SpringのModelオブジェクト
      * @return 検索画面のテンプレート名
      */
     @GetMapping("/equipment/search")
-    public String showSearchForm(Model model) {
+    public String showSearchForm(
+            @RequestParam(value = "location", required = false) String location,
+            @RequestParam(value = "name", required = false) String name,
+            Model model) {
         model.addAttribute("locationOptions", getLocationOptions());
+        model.addAttribute("location", location);
+        model.addAttribute("name", name);
         return "equipment_search";
     }
 
@@ -96,7 +103,6 @@ public class EquipmentController {
      * 
      * 検索条件に基づいて設備を検索し、結果を一覧表示します。
      * 
-     * @param searchType 検索タイプ（location: 設置場所のみ、name: 品名のみ、both: 両方）
      * @param location 設置場所コード（オプショナル）
      * @param name 品名（部分一致、オプショナル）
      * @param page ページ番号（0ベース）
@@ -105,7 +111,6 @@ public class EquipmentController {
      */
     @GetMapping("/equipment/search/results")
     public String searchEquipment(
-            @RequestParam("searchType") String searchType,
             @RequestParam(value = "location", required = false) String location,
             @RequestParam(value = "name", required = false) String name,
             @RequestParam(value = "page", defaultValue = "0") int page,
@@ -114,12 +119,16 @@ public class EquipmentController {
         // ページネーション情報を作成
         Pageable pageable = PageRequest.of(page, PAGE_SIZE);
         
-        // ページネーション付きで検索実行
+        // 検索条件に基づいて設備を検索
+        String searchType = determineSearchType(location, name);
         Page<Equipment> equipmentPage = equipmentService.searchEquipments(searchType, location, name, pageable);
         Page<EquipmentDto> equipmentDtoPage = equipmentService.convertToDtoPage(equipmentPage);
         
         // 設置場所名を取得
-        String locationName = getLocationNameById(location);
+        String locationName = null;
+        if (location != null && !location.isEmpty()) {
+            locationName = getLocationNameById(location);
+        }
         
         // 検索パラメータをモデルに追加（ページネーション用）
         model.addAttribute("currentUrl", "/equipment/search/results");
@@ -128,6 +137,9 @@ public class EquipmentController {
         model.addAttribute("searchName", name);
         
         addSearchAttributesToModel(model, equipmentDtoPage, searchType, location, name, locationName);
+        
+        // ページネーション情報をモデルに追加
+        addPaginationToModel(model, equipmentDtoPage);
         
         return "equipment_list";
     }
@@ -164,6 +176,28 @@ public class EquipmentController {
         model.addAttribute("pageNumbers", pageNumbers);
     }
     
+    /**
+     * 検索条件から検索タイプを決定
+     * 
+     * @param location 設置場所
+     * @param name 品名
+     * @return 検索タイプ（location, name, both）
+     */
+    private String determineSearchType(String location, String name) {
+        boolean hasLocation = location != null && !location.isEmpty();
+        boolean hasName = name != null && !name.isEmpty();
+        
+        if (hasLocation && hasName) {
+            return "both";
+        } else if (hasLocation) {
+            return "location";
+        } else if (hasName) {
+            return "name";
+        } else {
+            return "both"; // デフォルト値
+        }
+    }
+
     /**
      * 設置場所IDから設置場所名を取得
      * 
@@ -209,12 +243,8 @@ public class EquipmentController {
         model.addAttribute("page", equipmentDtoPage);
         model.addAttribute("currentUrl", "/equipment/list");
         
-        // ページ番号のリストを作成（1ベースのページ番号）
-        int totalPages = Math.max(1, equipmentDtoPage.getTotalPages());
-        List<Integer> pageNumbers = IntStream.rangeClosed(1, totalPages)
-            .boxed()
-            .collect(Collectors.toList());
-        model.addAttribute("pageNumbers", pageNumbers);
+        // ページ番号のリストを作成（最大10ページまで表示）
+        addPaginationToModel(model, equipmentDtoPage);
         
         return "equipment_list";
     }
@@ -242,7 +272,7 @@ public class EquipmentController {
      */
     private void addCommonFormAttributes(Model model) {
         model.addAttribute("locationOptions", getLocationOptions());
-        model.addAttribute("categoryOptions", getCategoryOptionsFromDatabase());
+        model.addAttribute("categories", categoryRepository.findAll());
         model.addAttribute("categoryItemMap", getCategoryItemMapFromDatabase());
     }
 
@@ -402,12 +432,8 @@ public class EquipmentController {
         model.addAttribute("page", equipmentDtoPage);
         model.addAttribute("currentUrl", "/equipment/delete-mode");
         
-        // ページ番号のリストを作成（1ベースのページ番号）
-        int totalPages = Math.max(1, equipmentDtoPage.getTotalPages());
-        List<Integer> pageNumbers = IntStream.rangeClosed(1, totalPages)
-            .boxed()
-            .collect(Collectors.toList());
-        model.addAttribute("pageNumbers", pageNumbers);
+        // ページネーション情報をモデルに追加
+        addPaginationToModel(model, equipmentDtoPage);
         
         return "equipment_delete";
     }
@@ -465,17 +491,20 @@ public class EquipmentController {
     /**
      * 設置場所オプション一覧を取得
      * 
-     * @return 設置場所のIDと名前のマップ
+     * @return 設置場所のIDリスト
      */
     private List<String> getLocationOptions() {
+        // データベースから設置場所を取得
         List<Location> locations = locationRepository.findAll();
         
         if (locations.isEmpty()) {
             return new ArrayList<>();
         }
         
+        // 重複を排除するためにStreamのdistinctを使用
         return locations.stream()
             .map(location -> location.getId().toString())
+            .distinct() // 重複を排除
             .collect(Collectors.toList());
     }
 
@@ -503,5 +532,65 @@ public class EquipmentController {
         }
         
         return null;
+    }
+
+    /**
+     * ページネーション情報をモデルに追加
+     * 
+     * @param model モデル
+     * @param page ページ情報
+     */
+    private void addPaginationToModel(Model model, Page<?> page) {
+        int currentPage = page.getNumber() + 1; // 1ベースのページ番号（表示用）
+        int totalPages = Math.max(1, page.getTotalPages());
+        
+        List<Integer> pageNumbers = new ArrayList<>();
+        
+        // 表示するページボタンの最大数
+        int maxDisplayedPages = 20;
+        
+        if (totalPages <= maxDisplayedPages) {
+            // 総ページ数が表示可能最大数以下の場合、すべてのページ番号を表示
+            for (int i = 1; i <= totalPages; i++) {
+                pageNumbers.add(i);
+            }
+        } else {
+            // 現在のページを中心にして表示するページ範囲を決定
+            int half = maxDisplayedPages / 2;
+            
+            // 開始ページと終了ページを計算
+            int startPage = Math.max(1, currentPage - half);
+            int endPage = startPage + maxDisplayedPages - 1;
+            
+            // 終了ページが総ページ数を超える場合、調整
+            if (endPage > totalPages) {
+                endPage = totalPages;
+                startPage = Math.max(1, endPage - maxDisplayedPages + 1);
+            }
+            
+            // 開始ページが1より大きい場合、最初のページと省略記号を追加
+            if (startPage > 1) {
+                pageNumbers.add(1);
+                if (startPage > 2) {
+                    pageNumbers.add(-1); // -1 は省略記号を表す特別な値
+                }
+            }
+            
+            // 範囲内のページ番号を追加
+            for (int i = startPage; i <= endPage; i++) {
+                pageNumbers.add(i);
+            }
+            
+            // 終了ページが最終ページより小さい場合、省略記号と最後のページを追加
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    pageNumbers.add(-1); // -1 は省略記号を表す特別な値
+                }
+                pageNumbers.add(totalPages);
+            }
+        }
+        
+        model.addAttribute("pageNumbers", pageNumbers);
+        model.addAttribute("currentPageNumber", currentPage); // 現在のページ番号（1ベース）
     }
 }
