@@ -425,7 +425,7 @@ public class EquipmentService {
      * 
      * @param code 設置場所コード
      * @return 設置場所ラベル
-     */
+     
     private String convertLocationCodeToLabel(String code) {
         Map<Integer, Location> locationMap = locationRepository.findAll().stream()
                 .collect(Collectors.toMap(Location::getId, location -> location));
@@ -441,12 +441,12 @@ public class EquipmentService {
         setCategoryNames(dto, equipment, categoryMap, subcategoryMap);
     }
 
-    /**
+    
      * 設備エンティティをDTOに変換
      * 
      * @param equipment 設備エンティティ
      * @return 設備DTO
-     */
+     
     private EquipmentDto convertToDto(Equipment equipment) {
         Map<Integer, Location> locationMap = locationRepository.findAll().stream()
                 .collect(Collectors.toMap(Location::getId, location -> location));
@@ -456,7 +456,7 @@ public class EquipmentService {
                 .collect(Collectors.toMap(Subcategory::getId, subcategory -> subcategory));
         return convertToDto(equipment, locationMap, categoryMap, subcategoryMap);
     }
-    
+    */
     /**
      * カテゴリーIDからカテゴリーコードを取得
      * 

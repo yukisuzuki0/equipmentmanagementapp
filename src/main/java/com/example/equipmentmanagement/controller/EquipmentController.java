@@ -1,6 +1,6 @@
 package com.example.equipmentmanagement.controller;
 
-import com.example.equipmentmanagement.dto.CategoryOption;
+/**import com.example.equipmentmanagement.dto.CategoryOption;*/
 import com.example.equipmentmanagement.dto.EquipmentDto;
 import com.example.equipmentmanagement.entity.*;
 import com.example.equipmentmanagement.repository.*;
@@ -18,7 +18,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.Comparator;
+/**import java.util.Comparator;*/
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.stream.IntStream;
@@ -66,6 +66,8 @@ public class EquipmentController {
         this.categoryRepository = categoryRepository;
         this.subcategoryRepository = subcategoryRepository;
     }
+
+
 
     /**
      * ルートパスへのアクセスを検索画面にリダイレクト
@@ -478,7 +480,7 @@ public class EquipmentController {
      * メインカテゴリーオプション（ID+名前）を取得
      * 
      * @return メインカテゴリーオプションのリスト
-     */
+   
     private List<CategoryOption> getCategoryOptionsFromDatabase() {
         List<Category> categories = categoryRepository.findAll();
 
@@ -487,7 +489,7 @@ public class EquipmentController {
                 .sorted(Comparator.comparing(CategoryOption::getCode))
                 .toList();
     }
-
+    */
     /**
      * 設置場所オプション一覧を取得
      * 
