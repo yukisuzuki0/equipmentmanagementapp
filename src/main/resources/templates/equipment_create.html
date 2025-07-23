@@ -284,13 +284,7 @@
                             th:text="${@locationRepository.findById(T(java.lang.Integer).parseInt(loc)).orElse(new com.example.equipmentmanagement.entity.Location()).getName()}"></option>
                 </select>
             </div>
-            
-            <!-- 耐用年数 -->
-            <div class="form-group">
-                <label for="lifespanYears">耐用年数</label>
-                <input type="number" id="lifespanYears" name="lifespanYears" min="1" max="50">
-                <p class="help-text">単位: 年（1〜50の間で入力）</p>
-            </div>
+        
             
             <!-- 使用期限 -->
             <div class="form-group">
