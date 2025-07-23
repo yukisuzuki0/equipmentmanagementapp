@@ -52,7 +52,7 @@ public class EquipmentController {
     private final SubcategoryRepository subcategoryRepository;
     
     // 1ページあたりの表示件数
-    private static final int PAGE_SIZE = 100;
+    private static final int PAGE_SIZE = 50;
 
     public EquipmentController(
             EquipmentService equipmentService,
