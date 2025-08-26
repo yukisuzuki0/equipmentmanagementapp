@@ -42,6 +42,7 @@ import java.util.HashMap;
 public class EquipmentController {
 
     private final EquipmentService equipmentService;
+    @SuppressWarnings("unused")
     private final DepreciationService depreciationService;
     private final LocationRepository locationRepository;
     private final CategoryRepository categoryRepository;

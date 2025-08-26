@@ -341,6 +341,7 @@ public class EquipmentService {
     }
 
     // 元のメソッドは残しておき、内部実装を変更して互換性を保つ
+    @SuppressWarnings("unused")
     private String convertLocationCodeToLabel(String code) {
         Map<Integer, Location> locationMap = locationRepository.findAll().stream()
                 .collect(Collectors.toMap(Location::getId, location -> location));
@@ -348,6 +349,7 @@ public class EquipmentService {
     }
 
     // 元のメソッドを残しておき、内部実装を変更して互換性を保つ
+    @SuppressWarnings("unused")
     private void setCategoryNames(EquipmentDto dto, Equipment equipment) {
         Map<Integer, Category> categoryMap = categoryRepository.findAll().stream()
                 .collect(Collectors.toMap(Category::getId, category -> category));
@@ -362,6 +364,7 @@ public class EquipmentService {
      * @param equipment 設備エンティティ
      * @return 設備DTO
      */
+    @SuppressWarnings("unused")
     private EquipmentDto convertToDto(Equipment equipment) {
         Map<Integer, Location> locationMap = locationRepository.findAll().stream()
                 .collect(Collectors.toMap(Location::getId, location -> location));

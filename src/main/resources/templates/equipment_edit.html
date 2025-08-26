@@ -361,8 +361,40 @@
         // 使用期限を年月日の個別入力に設定
         setParsedDate(currentUsageDeadline, usageDeadlineYearInput, usageDeadlineMonthInput, usageDeadlineDayInput);
     });
+    window.addEventListener('load', () => {
+    if (currentCategoryCode) {
+        categorySelect.value = currentCategoryCode;
+        updateItemOptions();
+    }
+
+    // 購入日を年月日の個別入力に設定
+    setParsedDate(currentPurchaseDate, purchaseYearInput, purchaseMonthInput, purchaseDayInput);
+
+    // 使用期限を年月日の個別入力に設定
+    setParsedDate(currentUsageDeadline, usageDeadlineYearInput, usageDeadlineMonthInput, usageDeadlineDayInput);
+
+    // === ここから WebSocket の処理 ===
+    const equipmentId = document.querySelector('input[name="id"]').value;
+
+    const socket = new SockJS('/ws'); // Springのエンドポイント
+    const stompClient = Stomp.over(socket);
+
+    stompClient.connect({}, () => {
+        // サーバーから他の人の編集中メッセージを受け取る
+        stompClient.subscribe('/topic/editing', (message) => {
+            const editingId = message.body;
+            if (editingId === equipmentId) {
+                alert("他のユーザーがこの設備を編集中です！");
+            }
+        });
+
+        // 自分が編集中であることをサーバーに通知
+        stompClient.send('/app/edit/start', {}, equipmentId);
+    });
+});
     /*]]>*/
 </script>
-
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
 </body>
 </html>
