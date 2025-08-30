@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="utf-8" />
+  <title>ログインフォーム</title>
+   <link rel="stylesheet" href="/css/formstyle.css" th:href="@{/css/formstyle.css}" />
+</head>
+
+<body>
+  <div class="card">
+    <h1>設備管理システム</h1>
+    <form th:action="@{/login}" method="post">
+      <h2>ログインフォーム</h2>
+
+      <div th:if="${param.error}" class="alert-danger">
+        ユーザー名またはパスワードが正しくありません。
+      </div>
+
+      <input type="text" name="username" placeholder="ユーザー名" required autofocus />
+      <input type="password" name="password" placeholder="パスワード" required />
+
+      <button type="submit" class="btn-submit">ログイン</button>
+    </form>
+  </div>
+</body>
+
+</html>

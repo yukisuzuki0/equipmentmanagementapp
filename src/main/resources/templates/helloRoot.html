@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Hello Page</title>
+    <link rel="stylesheet" href="/css/helloRoot.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1 th:text="${message}">メッセージがここに表示されます</h1>
+
+        <a th:href="@{/equipment/list}" class="btn btn-primary">📋 設備一覧へ</a>
+        <a th:href="@{/users}" class="btn btn-success">👤 ユーザー作成へ</a>
+    </div>
+</body>
+
+</html>
