@@ -306,6 +306,11 @@ public class EquipmentController {
         LocalDate purchaseDate = LocalDate.of(year, month, day);
         LocalDate usageDeadline = createUsageDeadline(usageYear, usageMonth, usageDay);
         
+        // 購入価格がnullの場合は0に設定
+        if (equipment.getCost() == null) {
+            equipment.setCost(0.0);
+        }
+        
         equipmentService.createEquipment(equipment, purchaseDate, usageDeadline);
         return "redirect:/equipment/list";
     }
@@ -353,6 +358,11 @@ public class EquipmentController {
 
         LocalDate purchaseDate = LocalDate.of(year, month, day);
         LocalDate usageDeadline = createUsageDeadline(usageYear, usageMonth, usageDay);
+        
+        // 購入価格がnullの場合は0に設定
+        if (equipment.getCost() == null) {
+            equipment.setCost(0.0);
+        }
         
         equipmentService.updateEquipment(equipment, purchaseDate, usageDeadline);
         return "redirect:/equipment/list";

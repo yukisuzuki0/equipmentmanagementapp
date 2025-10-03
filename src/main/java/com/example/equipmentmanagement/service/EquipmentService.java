@@ -373,6 +373,12 @@ public class EquipmentService {
      * @param lifespan 耐用年数
      */
     private void calculateDepreciation(EquipmentDto dto, Equipment equipment, int lifespan) {
+        // 購入価格がnullの場合は0に設定
+        Double cost = equipment.getCost();
+        if (cost == null) {
+            cost = 0.0;
+        }
+        
         if (equipment.getPurchaseDate() != null && lifespan > 0) {
             int elapsed = Math.min(java.time.Period.between(equipment.getPurchaseDate(), LocalDate.now()).getYears(), lifespan);
             dto.setElapsedYears(elapsed);
@@ -391,10 +397,10 @@ public class EquipmentService {
                 dto.setDepreciationStatus(String.format("%.2f", annualDep));
             }
         } else {
-            // 購入日や耐用年数が不明な場合
+            // 購入日や耐用年数が不明な場合、または購入価格が0の場合
             dto.setElapsedYears(0);
             dto.setAnnualDepreciation(0.0);
-            dto.setBookValue(dto.getCost());
+            dto.setBookValue(cost);
             dto.setDepreciationStatus("-");
         }
     }
