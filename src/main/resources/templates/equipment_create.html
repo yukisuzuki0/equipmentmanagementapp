@@ -246,9 +246,10 @@
             <!-- 購入価格 -->
             <div class="form-group">
                 <label for="cost">購入価格</label>
-                <input type="number" id="cost" name="cost" step="0.01">
-                <p class="help-text">単位: 円（小数点以下2桁まで入力可能）</p>
+                <input type="number" id="cost" name="cost" step="1" min="0">
+                <p class="help-text">単位: 円（未入力の場合は0円として処理されます）</p>
             </div>
+
 
             <!-- 購入日 -->
             <div class="form-group">

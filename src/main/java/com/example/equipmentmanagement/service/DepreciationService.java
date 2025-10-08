@@ -51,7 +51,12 @@ public class DepreciationService {
     public double calculateAnnualDepreciation(Equipment equipment) {
         int lifespan = getLifespanYears(equipment);
         if (lifespan <= 0) return 0;
-        return equipment.getCost() / lifespan;
+        
+        // 購入価格がnullの場合は0を返す
+        Double cost = equipment.getCost();
+        if (cost == null) return 0;
+        
+        return cost / lifespan;
     }
 
     /**
@@ -70,6 +75,10 @@ public class DepreciationService {
         
         // 購入日がnullの場合は0を返す
         if (equipment.getPurchaseDate() == null) return 0;
+        
+        // 購入価格がnullの場合は0を返す
+        Double cost = equipment.getCost();
+        if (cost == null) return 0;
 
         // 購入日から基準日までの経過年数を計算
         int elapsedYears = Period.between(equipment.getPurchaseDate(), referenceDate).getYears();
@@ -87,8 +96,12 @@ public class DepreciationService {
      * @return 帳簿価額（取得価額 - 累積減価償却額、負の値にはならない）
      */
     public double calculateBookValue(Equipment equipment, LocalDate today) {
+        // 購入価格がnullの場合は0を返す
+        Double cost = equipment.getCost();
+        if (cost == null) return 0.0;
+        
         double accumulated = calculateAccumulatedDepreciation(equipment, today);
-        double bookValue = equipment.getCost() - accumulated;
+        double bookValue = cost - accumulated;
         return bookValue < 0 ? 0 : bookValue;
     }
 
